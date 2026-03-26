@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "ckeditor",
+    "ckeditor_uploader",
     "academy",
 ]
 
@@ -117,3 +119,22 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+CKEDITOR_UPLOAD_PATH = "uploads/"
+CKEDITOR_CONFIGS = {
+    "article_editor": {
+        "height": 420,
+        "width": "auto",
+        "toolbar": [
+            ["Format", "FontSize", "Bold", "Italic", "Underline", "Strike", "-", "TextColor", "BGColor"],
+            ["NumberedList", "BulletedList", "-", "Outdent", "Indent", "-", "Blockquote"],
+            ["Link", "Unlink", "Image", "Table", "HorizontalRule"],
+            ["RemoveFormat", "Source"],
+            ["Maximize"],
+        ],
+        "extraPlugins": ",".join(["uploadimage", "image2"]),
+    }
+}

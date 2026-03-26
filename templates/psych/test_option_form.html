@@ -1,0 +1,19 @@
+{% extends "psych/base.html" %}
+{% block title %}Вариант ответа{% endblock %}
+{% block psych_content %}
+<div class="card">
+  <h2 style="margin-top:0;">{% if mode == "create" %}Новый вариант{% else %}Редактирование варианта{% endif %}</h2>
+  <div class="muted">Вопрос: {{ question.question_text }}</div>
+  <form method="post" style="margin-top:12px;">
+    {% csrf_token %}
+    <div style="display:grid; gap:12px;">
+      {{ form.non_field_errors }}
+      <label><div class="muted">{{ form.option_text.label }}</div>{{ form.option_text }}{{ form.option_text.errors }}</label>
+      <label>{{ form.is_correct }} {{ form.is_correct.label }}</label>
+      <label><div class="muted">{{ form.score.label }}</div>{{ form.score }}{{ form.score.errors }}</label>
+      <button class="btn" type="submit">Сохранить</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+

@@ -1,0 +1,112 @@
+{% extends "psych/base.html" %}
+{% block title %}Редактор игры{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="/static/psych/scene-editor/scene-editor.css">
+{% endblock %}
+{% block psych_content %}
+<div class="card">
+  <h2 style="margin-top:0;">Редактор игры: {{ content.title }}</h2>
+  <div class="muted">Урок: {{ content.lesson.title }}</div>
+  <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+    <a class="btn" href="{% url 'academy:psych_avatar_builder' content.id %}">Открыть конструктор персонажей</a>
+  </div>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0;">Сохранённые персонажи</h3>
+  <div class="grid">
+    {% for avatar in avatars %}
+      <div class="card" style="margin:0;">
+        <strong>{{ avatar.name }}</strong>
+        <div class="muted">
+          {% if avatar.body_part %}Тело: {{ avatar.body_part.name }}{% endif %}
+          {% if avatar.hair_part %}<br>Волосы: {{ avatar.hair_part.name }}{% endif %}
+          {% if avatar.eyes_part %}<br>Глаза: {{ avatar.eyes_part.name }}{% endif %}
+          {% if avatar.clothes_part %}<br>Одежда: {{ avatar.clothes_part.name }}{% endif %}
+          {% if avatar.accessory_part %}<br>Аксессуар: {{ avatar.accessory_part.name }}{% endif %}
+        </div>
+      </div>
+    {% empty %}
+      <div class="muted">Пока нет собранных персонажей.</div>
+    {% endfor %}
+  </div>
+</div>
+
+<form method="post" action="{% url 'academy:psych_game_scene_save' content.id %}" id="scene-form">
+  {% csrf_token %}
+  <div class="card">
+    <h3 style="margin-top:0;">Сцена</h3>
+    <input type="hidden" name="scene_id" id="scene-id">
+    <div style="display:grid; gap:10px;">
+      <label><div class="muted">Название сцены</div><input name="title" id="scene-title"></label>
+      <label><div class="muted">Порядок</div><input type="number" name="order" id="scene-order" value="1"></label>
+      <label><div class="muted">Фон</div>
+        <select name="background_id" id="scene-background">
+          <option value="">Без фона</option>
+          {% for bg in backgrounds %}
+            <option value="{{ bg.id }}" data-image="{{ bg.image.url }}">{{ bg.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label><div class="muted">Текст вопроса/ситуации</div><textarea name="question_text" id="scene-question"></textarea></label>
+      <label><div class="muted">Тип ответа</div>
+        <select name="answer_mode" id="scene-answer-mode">
+          <option value="open">Открытый ответ</option>
+          <option value="choices">Выбор варианта</option>
+        </select>
+      </label>
+      <div id="choices-editor" style="display:none;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <strong>Варианты ответа</strong>
+          <button class="btn" type="button" id="add-choice-btn">+ Вариант</button>
+        </div>
+        <div id="choices-list" style="display:grid; gap:8px; margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+      <h3 style="margin:0;">Полотно сцены</h3>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn" type="button" id="add-avatar-btn">+ Персонаж</button>
+        <button class="btn" type="button" id="add-text-btn">+ Текст</button>
+      </div>
+    </div>
+    <div id="scene-canvas" class="scene-canvas"></div>
+  </div>
+
+  <input type="hidden" name="objects_json" id="objects-json">
+  <input type="hidden" name="texts_json" id="texts-json">
+  <input type="hidden" name="options_json" id="options-json">
+  <button class="btn" type="submit">Сохранить сцену</button>
+</form>
+
+<div class="card">
+  <h3 style="margin-top:0;">Сохранённые сцены</h3>
+  <ul>
+    {% for s in scenes %}
+      <li style="margin-bottom:8px;">
+        <button type="button" class="btn load-scene-btn" data-scene='{"id":{{ s.id }},"title":"{{ s.title|escapejs }}","order":{{ s.order }},"question_text":"{{ s.question_text|escapejs }}","answer_mode":"{{ s.answer_mode }}","background_id":"{% if s.background_id %}{{ s.background_id }}{% endif %}","objects":[{% for o in s.scene_objects.all %}{"name":"{{ o.name|escapejs }}","avatar_id":{% if o.avatar_id %}{{ o.avatar_id }}{% else %}null{% endif %},"x":{{ o.x }},"y":{{ o.y }},"width":{{ o.width }},"height":{{ o.height }},"scale":{{ o.scale }},"flip_x":{% if o.flip_x %}true{% else %}false{% endif %},"z_index":{{ o.z_index }}}{% if not forloop.last %},{% endif %}{% endfor %}],"texts":[{% for t in s.texts.all %}{"text":"{{ t.text|escapejs }}","x":{{ t.x }},"y":{{ t.y }},"width":{{ t.width }},"font_size":{{ t.font_size }}}{% if not forloop.last %},{% endif %}{% endfor %}],"options":[{% for op in s.answer_options.all %}{"option_text":"{{ op.option_text|escapejs }}","is_correct":{% if op.is_correct %}true{% else %}false{% endif %},"score":{{ op.score }}}{% if not forloop.last %},{% endif %}{% endfor %}] }'>Открыть: {{ s.title }}</button>
+        <form method="post" action="{% url 'academy:psych_game_scene_delete' s.id %}" style="display:inline;">
+          {% csrf_token %}
+          <button class="btn" type="submit" style="background:#8b1e1e;">Удалить</button>
+        </form>
+      </li>
+    {% empty %}
+      <li>Сцен пока нет.</li>
+    {% endfor %}
+  </ul>
+</div>
+
+<script>
+  window.sceneEditorData = {
+    avatars: [{% for a in avatars %}{ id: {{ a.id }}, name: "{{ a.name|escapejs }}", body: "{% if a.body_part %}{{ a.body_part.image.url }}{% endif %}", hair: "{% if a.hair_part %}{{ a.hair_part.image.url }}{% endif %}", eyes: "{% if a.eyes_part %}{{ a.eyes_part.image.url }}{% endif %}", clothes: "{% if a.clothes_part %}{{ a.clothes_part.image.url }}{% endif %}", accessory: "{% if a.accessory_part %}{{ a.accessory_part.image.url }}{% endif %}" }{% if not forloop.last %},{% endif %}{% endfor %}],
+    backgrounds: [{% for bg in backgrounds %}{ id: {{ bg.id }}, image: "{{ bg.image.url }}", name: "{{ bg.name|escapejs }}" }{% if not forloop.last %},{% endif %}{% endfor %}]
+  };
+</script>
+{% endblock %}
+{% block extra_scripts %}
+<script src="/static/psych/scene-editor/scene-editor.js"></script>
+{% endblock %}
+

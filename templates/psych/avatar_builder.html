@@ -1,0 +1,48 @@
+{% extends "psych/base.html" %}
+{% block title %}Конструктор персонажей{% endblock %}
+{% block psych_content %}
+<div class="card">
+  <h2 style="margin-top:0;">Конструктор персонажа</h2>
+  <form method="post" action="{% url 'academy:psych_avatar_create' content.id %}">
+    {% csrf_token %}
+    <div style="display:grid; gap:10px;">
+      <label><div class="muted">Имя персонажа</div><input name="name" required></label>
+
+      <label><div class="muted">Тело</div>
+        <select name="body_part">
+          <option value="">Не выбрано</option>
+          {% for p in part_assets %}{% if p.part_type == "body" %}<option value="{{ p.id }}">{{ p.name }}</option>{% endif %}{% endfor %}
+        </select>
+      </label>
+      <label><div class="muted">Глаза</div>
+        <select name="eyes_part">
+          <option value="">Не выбрано</option>
+          {% for p in part_assets %}{% if p.part_type == "eyes" %}<option value="{{ p.id }}">{{ p.name }}</option>{% endif %}{% endfor %}
+        </select>
+      </label>
+      <label><div class="muted">Волосы</div>
+        <select name="hair_part">
+          <option value="">Не выбрано</option>
+          {% for p in part_assets %}{% if p.part_type == "hair" %}<option value="{{ p.id }}">{{ p.name }}</option>{% endif %}{% endfor %}
+        </select>
+      </label>
+      <label><div class="muted">Одежда</div>
+        <select name="clothes_part">
+          <option value="">Не выбрано</option>
+          {% for p in part_assets %}{% if p.part_type == "clothes" %}<option value="{{ p.id }}">{{ p.name }}</option>{% endif %}{% endfor %}
+        </select>
+      </label>
+      <label><div class="muted">Аксессуар</div>
+        <select name="accessory_part">
+          <option value="">Не выбрано</option>
+          {% for p in part_assets %}{% if p.part_type == "accessory" %}<option value="{{ p.id }}">{{ p.name }}</option>{% endif %}{% endfor %}
+        </select>
+      </label>
+
+      <button class="btn" type="submit">Сохранить персонажа</button>
+      <a class="btn" href="{% url 'academy:psych_game_editor' content.id %}">Назад в редактор игры</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+

@@ -1,0 +1,118 @@
+{% extends "psych/base.html" %}
+{% block title %}Вопрос теста{% endblock %}
+{% block psych_content %}
+<div class="card">
+  <h2 style="margin-top:0;">{% if mode == "create" %}Новый вопрос{% else %}Редактирование вопроса{% endif %}</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div style="display:grid; gap:12px;">
+      {{ form.non_field_errors }}
+      <label><div class="muted">{{ form.question_text.label }}</div>{{ form.question_text }}{{ form.question_text.errors }}</label>
+      <label>
+        <div class="muted">{{ form.image.label }}</div>
+        {{ form.image }}
+        {{ form.image.errors }}
+        {% if mode == "edit" and form.instance.image %}
+          <div class="muted" style="margin-top:6px;">Текущая картинка: <a href="{{ form.instance.image.url }}" target="_blank">открыть</a></div>
+          <button class="btn" type="submit" formaction="{% url 'academy:psych_test_question_remove_image' form.instance.id %}" formmethod="post" style="background:#8b1e1e; margin-top:6px;">Удалить картинку</button>
+        {% endif %}
+      </label>
+      <label><div class="muted">{{ form.question_type.label }}</div>{{ form.question_type }}{{ form.question_type.errors }}</label>
+      <label><div class="muted">{{ form.order.label }}</div>{{ form.order }}{{ form.order.errors }}</label>
+
+      <div id="options-panel" class="card" style="margin:0; display:none;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <strong>Варианты ответа</strong>
+          <button class="btn" type="button" id="add-option-btn">+ Добавить вариант</button>
+        </div>
+        <div id="options-list" style="display:grid; gap:8px; margin-top:10px;"></div>
+        <div class="muted" style="margin-top:8px;">Отметьте галочкой справа правильные варианты.</div>
+      </div>
+      <button class="btn" type="submit">Сохранить</button>
+    </div>
+  </form>
+</div>
+<script>
+  (function () {
+    const typeField = document.getElementById("id_question_type");
+    const panel = document.getElementById("options-panel");
+    const list = document.getElementById("options-list");
+    const addBtn = document.getElementById("add-option-btn");
+    const initial = JSON.parse('{{ options_data_json|escapejs }}');
+
+    const createRow = (value = "", isCorrect = false, score = 0) => {
+      const row = document.createElement("div");
+      row.style.display = "grid";
+      row.style.gridTemplateColumns = "1fr auto auto auto";
+      row.style.gap = "8px";
+      row.style.alignItems = "center";
+
+      const text = document.createElement("input");
+      text.name = "option_text[]";
+      text.value = value;
+      text.placeholder = "Текст варианта";
+
+      const scoreInput = document.createElement("input");
+      scoreInput.name = "option_score[]";
+      scoreInput.type = "number";
+      scoreInput.value = score;
+      scoreInput.style.width = "100px";
+
+      const correct = document.createElement("input");
+      correct.type = "checkbox";
+      correct.className = "option-correct";
+      correct.checked = isCorrect;
+
+      const hiddenCorrect = document.createElement("input");
+      hiddenCorrect.type = "hidden";
+      hiddenCorrect.name = "option_correct[]";
+      hiddenCorrect.value = "";
+
+      const syncCorrect = () => {
+        hiddenCorrect.value = correct.checked ? String([...list.children].indexOf(row)) : "";
+      };
+      correct.addEventListener("change", syncCorrect);
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "btn";
+      removeBtn.style.background = "#8b1e1e";
+      removeBtn.textContent = "Удалить";
+      removeBtn.addEventListener("click", () => {
+        row.remove();
+        syncAllIndexes();
+      });
+
+      row.appendChild(text);
+      row.appendChild(scoreInput);
+      row.appendChild(correct);
+      row.appendChild(removeBtn);
+      row.appendChild(hiddenCorrect);
+      list.appendChild(row);
+      syncCorrect();
+    };
+
+    const syncAllIndexes = () => {
+      [...list.children].forEach((row, idx) => {
+        const checkbox = row.querySelector(".option-correct");
+        const hidden = row.querySelector('input[type="hidden"]');
+        hidden.value = checkbox.checked ? String(idx) : "";
+      });
+    };
+
+    addBtn?.addEventListener("click", () => createRow("", false, 0));
+    if (Array.isArray(initial) && initial.length) {
+      initial.forEach((item) => createRow(item.option_text || "", !!item.is_correct, item.score || 0));
+    } else {
+      createRow("", false, 0);
+    }
+
+    const updateType = () => {
+      panel.style.display = typeField?.value === "open" ? "none" : "block";
+    };
+    typeField?.addEventListener("change", updateType);
+    updateType();
+  })();
+</script>
+{% endblock %}
+

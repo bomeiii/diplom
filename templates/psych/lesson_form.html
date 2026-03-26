@@ -1,0 +1,41 @@
+{% extends "psych/base.html" %}
+{% block title %}Новый урок{% endblock %}
+{% block psych_content %}
+<div class="card">
+  <h2 style="margin-top:0;">Новый урок для курса «{{ course.title }}»</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div style="display:grid; gap:12px;">
+      {{ form.non_field_errors }}
+      <label>
+        <div class="muted">{{ form.title.label }}</div>
+        {{ form.title }}
+        {{ form.title.errors }}
+      </label>
+      <label>
+        <div class="muted">{{ form.order.label }}</div>
+        {{ form.order }}
+        {{ form.order.errors }}
+      </label>
+      <label>{{ form.is_private }} {{ form.is_private.label }}</label>
+      <div id="private-lesson-hint" class="card" style="margin:0; display:none; background:#f5f8ff; border:1px solid #dbe6ff;">
+        <div class="muted">После сохранения урока появится приватная ссылка для доступа к этому уроку.</div>
+      </div>
+      <button class="btn" type="submit">Сохранить урок</button>
+    </div>
+  </form>
+</div>
+<script>
+  (function () {
+    const privateCheckbox = document.getElementById("id_is_private");
+    const hint = document.getElementById("private-lesson-hint");
+    if (!privateCheckbox || !hint) return;
+    const updateVisibility = () => {
+      hint.style.display = privateCheckbox.checked ? "block" : "none";
+    };
+    updateVisibility();
+    privateCheckbox.addEventListener("change", updateVisibility);
+  })();
+</script>
+{% endblock %}
+

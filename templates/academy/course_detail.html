@@ -12,10 +12,14 @@
     <ol>
         {% for lesson in lessons %}
             <li>
-                <a href="{% url 'academy:lesson_detail' lesson.id %}">{{ lesson.title }}</a>
+                {% if lesson.is_private %}
+                    {{ lesson.title }} <span class="badge">закрытый урок</span> <span class="muted">(доступ только по ссылке)</span>
+                {% else %}
+                    <a href="{% url 'academy:lesson_detail' lesson.id %}{% if access_token %}?access={{ access_token }}{% endif %}">{{ lesson.title }}</a>
+                {% endif %}
                 <ul>
                     {% for content in lesson.contents.all %}
-                        <li>{{ content.get_content_type_display }}: {{ content.title }}</li>
+                        <li>{{ content.title }}</li>
                     {% endfor %}
                 </ul>
             </li>

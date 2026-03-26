@@ -8,12 +8,14 @@
 </div>
 
 <div class="card">
-    <h3>Курсы психолога</h3>
     <ul>
         {% for course in courses %}
             <li>
-                <a href="{% url 'academy:course_detail' course.id %}">{{ course.title }}</a>
-                {% if course.is_private %}<span class="badge">закрытый</span>{% else %}<span class="badge">открытый</span>{% endif %}
+                {% if course.is_private %}
+                    {{ course.title }} <span class="badge">закрытый</span> <span class="muted">(доступ только по ссылке)</span>
+                {% else %}
+                    <a href="{% url 'academy:course_detail' course.id %}">{{ course.title }}</a> <span class="badge">открытый</span>
+                {% endif %}
             </li>
         {% empty %}
             <li>Курсы пока не добавлены.</li>
@@ -21,17 +23,4 @@
     </ul>
 </div>
 
-<div class="card">
-    <h3>Пользователи и результаты</h3>
-    <ul>
-        {% for result in child_results %}
-            <li>
-                {{ result.child }} - {{ result.course.title }}: {{ result.total_score }} баллов
-                <div class="muted">{{ result.ai_summary|linebreaksbr }}</div>
-            </li>
-        {% empty %}
-            <li>Результатов пока нет.</li>
-        {% endfor %}
-    </ul>
-</div>
 {% endblock %}

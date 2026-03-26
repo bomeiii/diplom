@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Вход для психолога{% endblock %}
+{% block content %}
+<div class="card" style="max-width:520px;">
+  <h2>Вход для психолога</h2>
+  <p class="muted">Введите логин и пароль, которые вам выдал администратор.</p>
+  {% if error %}
+    <div class="card" style="background:#fff5f5; border:1px solid #ffd6d6;">
+      <strong>Ошибка:</strong> {{ error }}
+    </div>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <div style="display:grid; gap:10px;">
+      <label>
+        <div class="muted" style="margin-bottom:4px;">Логин</div>
+        <input name="username" autocomplete="username" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;">
+      </label>
+      <label>
+        <div class="muted" style="margin-bottom:4px;">Пароль</div>
+        <input type="password" name="password" autocomplete="current-password" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;">
+      </label>
+      <button class="btn" type="submit">Войти</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+

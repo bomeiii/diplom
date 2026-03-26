@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Кабинет психолога{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap: wrap;">
+    <div>
+      <div class="muted">Вы вошли как психолог</div>
+      <div><strong>{{ psychologist.last_name }} {{ psychologist.first_name }}</strong></div>
+      <div class="muted">{{ psychologist.specialization }}</div>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap: wrap;">
+      <a class="btn" href="{% url 'academy:psych_dashboard' %}">Мои курсы</a>
+      <a class="btn" href="{% url 'academy:psych_logout' %}">Выйти</a>
+    </div>
+  </div>
+</div>
+
+{% block psych_content %}{% endblock %}
+{% endblock %}
+

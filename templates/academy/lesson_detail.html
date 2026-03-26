@@ -1,25 +1,79 @@
 {% extends "base.html" %}
 {% block title %}{{ lesson.title }}{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
+<style>
+  .video-thumb { position: relative; display: inline-block; border-radius: 10px; overflow: hidden; max-width: 560px; width: 100%; background: #eef2ff; }
+  .video-thumb img { width: 100%; display: block; }
+  .video-thumb .video-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 42px; color: #fff; background: rgba(0, 0, 0, 0.25); }
+  .video-fallback { border: 1px dashed #bbc6e6; border-radius: 10px; padding: 22px; background: #f7f9ff; display: inline-block; }
+</style>
+{% endblock %}
 {% block content %}
 <div class="card">
     <h2>{{ lesson.title }}</h2>
-    <p>Курс: <a href="{% url 'academy:course_detail' lesson.course.id %}">{{ lesson.course.title }}</a></p>
+    <p>Курс: <a href="{% url 'academy:course_detail' lesson.course.id %}{% if access_token %}?access={{ access_token }}{% endif %}">{{ lesson.course.title }}</a></p>
 </div>
 
 {% for content in contents %}
     <div class="card">
-        <h3>{{ content.get_content_type_display }}: {{ content.title }}</h3>
+        <h3>{{ content.title }}</h3>
 
         {% if content.content_type == "article" %}
-            <div>{{ content.article_body|linebreaksbr }}</div>
+            <div>{{ content.article_body|safe }}</div>
         {% elif content.content_type == "video" %}
-            <p>Ссылка на видео: <a href="{{ content.video_url }}" target="_blank">{{ content.video_url }}</a></p>
+            {% with preview=content.get_video_preview_url %}
+              {% if content.video_url %}
+                <a
+                  data-fancybox="lesson-video-{{ content.id }}"
+                  data-type="iframe"
+                  data-src="{{ content.get_video_embed_url }}"
+                  href="javascript:;"
+                  class="video-thumb"
+                >
+                  {% if preview %}
+                    <img src="{{ preview }}" alt="Превью видео">
+                  {% else %}
+                    <div class="video-fallback">Открыть видео</div>
+                  {% endif %}
+                  <span class="video-play">▶</span>
+                </a>
+              {% elif content.video_file %}
+                <a
+                  data-fancybox="lesson-video-{{ content.id }}"
+                  data-type="inline"
+                  data-src="#video-inline-{{ content.id }}"
+                  href="javascript:;"
+                  class="video-thumb"
+                >
+                  {% if preview %}
+                    <img src="{{ preview }}" alt="Превью видео">
+                  {% else %}
+                    <div class="video-fallback">Открыть видеофайл</div>
+                  {% endif %}
+                  <span class="video-play">▶</span>
+                </a>
+                <div id="video-inline-{{ content.id }}" style="display:none; max-width:980px;">
+                  <video controls style="width:min(90vw,960px); max-height:80vh;">
+                    <source src="{{ content.video_file.url }}">
+                    Ваш браузер не поддерживает видео.
+                  </video>
+                </div>
+              {% else %}
+                <p class="muted">Видео не добавлено.</p>
+              {% endif %}
+            {% endwith %}
         {% elif content.content_type == "test" %}
             <form method="post" action="{% url 'academy:submit_test' content.id %}">
                 {% csrf_token %}
+                {% if access_token %}<input type="hidden" name="access" value="{{ access_token }}">{% endif %}
+                {% if lesson_access_token %}<input type="hidden" name="lesson_access" value="{{ lesson_access_token }}">{% endif %}
                 <p><label>Имя ребёнка: <input type="text" name="child_name" required></label></p>
                 {% for question in content.questions.all %}
                     <p><strong>{{ forloop.counter }}. {{ question.question_text }}</strong></p>
+                    {% if question.image %}
+                        <p><img src="{{ question.image.url }}" alt="Картинка вопроса" style="max-width:360px; border-radius:8px;"></p>
+                    {% endif %}
                     {% if question.question_type == "open" %}
                         <textarea name="q_{{ question.id }}_open" rows="3" style="width:100%;"></textarea>
                     {% else %}
@@ -38,35 +92,65 @@
                 <button class="btn" type="submit">Сохранить тест и анализ</button>
             </form>
         {% elif content.content_type == "game" %}
-            {% if content.game_scenario %}
-                <p><strong>Сценарий:</strong> {{ content.game_scenario.title }}</p>
-                <p>{{ content.game_scenario.intro_text|linebreaksbr }}</p>
-                <h4>Локации и шаги:</h4>
-                <ul>
-                    {% for location in content.game_scenario.locations.all %}
-                        <li>
-                            <strong>{{ location.name }}</strong>
-                            <ul>
-                                {% for step in location.steps.all %}
-                                    <li>
-                                        {{ step.step_text }}
-                                        {% if step.character %}(Персонаж: {{ step.character.name }}){% endif %}
-                                        {% if step.open_answer_allowed %}<span class="badge">открытый ответ</span>{% endif %}
-                                        <ul>
-                                            {% for option in step.options.all %}
-                                                <li>{{ option.option_text }}</li>
-                                            {% endfor %}
-                                        </ul>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
+            {% with scenes=content.game_scenes.all %}
+              {% if scenes %}
+                <form method="post" action="{% url 'academy:submit_game' content.id %}">
+                  {% csrf_token %}
+                  <p><label>Имя ребёнка: <input type="text" name="child_name" required></label></p>
+                  <label>
+                    <div class="muted">Сцена</div>
+                    <select name="scene_id" id="scene-select-{{ content.id }}" onchange="window.updateGameScene{{ content.id }}()">
+                      {% for s in scenes %}
+                        <option value="{{ s.id }}">{{ s.title }}</option>
+                      {% endfor %}
+                    </select>
+                  </label>
+
+                  {% for s in scenes %}
+                    <div class="card game-scene-panel-{{ content.id }}" data-scene-id="{{ s.id }}" style="margin-top:10px; {% if not forloop.first %}display:none;{% endif %}">
+                      {% if s.background %}
+                        <img src="{{ s.background.image.url }}" alt="Фон" style="width:100%; border-radius:8px; max-height:300px; object-fit:cover;">
+                      {% endif %}
+                      {% for t in s.texts.all %}
+                        <p>{{ t.text }}</p>
+                      {% endfor %}
+                      <p><strong>Ситуация:</strong> {{ s.question_text }}</p>
+                      {% if s.answer_mode == "open" %}
+                        <textarea name="game_open_answer" rows="3" style="width:100%;"></textarea>
+                      {% else %}
+                        {% for op in s.answer_options.all %}
+                          <label style="display:block;">
+                            <input type="checkbox" name="game_option" value="{{ op.id }}"> {{ op.option_text }}
+                          </label>
+                        {% endfor %}
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+
+                  <button class="btn" type="submit">Сохранить игровой ответ</button>
+                </form>
+                <script>
+                  window.updateGameScene{{ content.id }} = function () {
+                    const select = document.getElementById("scene-select-{{ content.id }}");
+                    const panels = document.querySelectorAll(".game-scene-panel-{{ content.id }}");
+                    panels.forEach((panel) => {
+                      panel.style.display = panel.dataset.sceneId === select.value ? "block" : "none";
+                    });
+                  };
+                </script>
+              {% else %}
                 <p>Игровой сценарий пока не создан.</p>
-            {% endif %}
+              {% endif %}
+            {% endwith %}
         {% endif %}
     </div>
 {% endfor %}
+{% endblock %}
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+<script>
+  Fancybox.bind("[data-fancybox]", {
+    dragToClose: false
+  });
+</script>
 {% endblock %}

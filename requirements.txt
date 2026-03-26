@@ -1,3 +1,5 @@
 Django==6.0.3
+django-ckeditor
+Pillow
 tzdata; platform_system=="Windows"
 

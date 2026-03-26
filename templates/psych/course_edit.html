@@ -1,0 +1,90 @@
+{% extends "psych/base.html" %}
+{% block title %}Редактирование курса{% endblock %}
+{% block psych_content %}
+<div class="card">
+  <h2 style="margin-top:0;">Курс: {{ course.title }}</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div style="display:grid; gap:12px;">
+      {{ form.non_field_errors }}
+      <label>
+        <div class="muted">{{ form.title.label }}</div>
+        {{ form.title }}
+        {{ form.title.errors }}
+      </label>
+      <label>
+        <div class="muted">{{ form.short_description.label }}</div>
+        {{ form.short_description }}
+        {{ form.short_description.errors }}
+      </label>
+      <div style="display:flex; gap:16px; flex-wrap: wrap;">
+        <label>{{ form.is_published }} {{ form.is_published.label }}</label>
+        <label>{{ form.is_private }} {{ form.is_private.label }}</label>
+      </div>
+      {% url 'academy:course_detail' course.id as private_course_path %}
+      <div id="private-link-block" class="card" style="margin:0; display:none; background:#f5f8ff; border:1px solid #dbe6ff;">
+        <div class="muted" style="margin-bottom:6px;">Ссылка на закрытый курс:</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <a id="private-course-link" href="{{ request.scheme }}://{{ request.get_host }}{{ private_course_path }}?access={{ course.private_access_token }}" target="_blank">
+            {{ request.scheme }}://{{ request.get_host }}{{ private_course_path }}?access={{ course.private_access_token }}
+          </a>
+          <button id="copy-private-link" type="button" class="btn">Скопировать ссылку</button>
+        </div>
+      </div>
+      <button class="btn" type="submit">Сохранить курс</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap: wrap;">
+    <h3 style="margin:0;">Уроки</h3>
+    <a class="btn" href="{% url 'academy:psych_lesson_create' %}?course_id={{ course.id }}">+ Добавить урок</a>
+  </div>
+  <ul>
+    {% for lesson in lessons %}
+      <li style="margin-top:8px;">
+        <strong>{{ lesson.order }}.</strong>
+        <a href="{% url 'academy:psych_lesson_edit' lesson.id %}">{{ lesson.title }}</a>
+        <form method="post" action="{% url 'academy:psych_lesson_delete' lesson.id %}" style="display:inline;">
+          {% csrf_token %}
+          <button class="btn" type="submit" style="background:#8b1e1e; padding:6px 10px; margin-left:10px;">Удалить</button>
+        </form>
+      </li>
+    {% empty %}
+      <li>Уроков пока нет.</li>
+    {% endfor %}
+  </ul>
+</div>
+
+<script>
+  (function () {
+    const privateCheckbox = document.getElementById("id_is_private");
+    const privateBlock = document.getElementById("private-link-block");
+    const copyButton = document.getElementById("copy-private-link");
+    const privateLink = document.getElementById("private-course-link");
+    if (!privateCheckbox || !privateBlock) return;
+
+    const updateVisibility = () => {
+      privateBlock.style.display = privateCheckbox.checked ? "block" : "none";
+    };
+    updateVisibility();
+    privateCheckbox.addEventListener("change", updateVisibility);
+
+    if (copyButton && privateLink) {
+      copyButton.addEventListener("click", async function () {
+        try {
+          await navigator.clipboard.writeText(privateLink.href);
+          copyButton.textContent = "Скопировано";
+          setTimeout(() => {
+            copyButton.textContent = "Скопировать ссылку";
+          }, 1200);
+        } catch (err) {
+          copyButton.textContent = "Не удалось";
+        }
+      });
+    }
+  })();
+</script>
+{% endblock %}
+

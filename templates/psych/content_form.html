@@ -1,0 +1,96 @@
+{% extends "psych/base.html" %}
+{% block title %}{% if mode == "create" %}Новый материал{% else %}Редактирование материала{% endif %}{% endblock %}
+{% block psych_content %}
+<div class="card">
+  <h2 style="margin-top:0;">
+    {% if mode == "create" %}Новый материал{% else %}Редактирование материала{% endif %}
+  </h2>
+  <div class="muted">
+    Курс: <a href="{% url 'academy:psych_course_edit' course.id %}">{{ course.title }}</a> →
+    Урок: <a href="{% url 'academy:psych_lesson_edit' lesson.id %}">{{ lesson.title }}</a>
+  </div>
+  <form method="post" enctype="multipart/form-data" style="margin-top:12px;">
+    {% csrf_token %}
+    <div style="display:grid; gap:12px;">
+      {{ form.non_field_errors }}
+      <label>
+        <div class="muted">{{ form.content_type.label }}</div>
+        {{ form.content_type }}
+        {{ form.content_type.errors }}
+      </label>
+      <label>
+        <div class="muted">{{ form.title.label }}</div>
+        {{ form.title }}
+        {{ form.title.errors }}
+      </label>
+      <label>
+        <div class="muted">{{ form.order.label }}</div>
+        {{ form.order }}
+        {{ form.order.errors }}
+      </label>
+      <label>
+        <div class="muted">{{ form.article_body.label }} (для типа «Статья»)</div>
+        {{ form.article_body }}
+        {{ form.article_body.errors }}
+      </label>
+      <label>
+        <div class="muted">{{ form.video_url.label }} (для типа «Видео», можно оставить пустым если загружаете файл)</div>
+        {{ form.video_url }}
+        {{ form.video_url.errors }}
+      </label>
+      <label>
+        <div class="muted">{{ form.video_file.label }} (для типа «Видео»)</div>
+        {{ form.video_file }}
+        {{ form.video_file.errors }}
+        {% if mode == "edit" and form.instance.video_file %}
+          <div class="muted" style="margin-top:6px;">
+            Текущий файл: <a href="{{ form.instance.video_file.url }}" target="_blank">открыть</a>
+          </div>
+          <button class="btn" type="submit" formaction="{% url 'academy:psych_content_remove_video_file' form.instance.id %}" formmethod="post" style="background:#8b1e1e; margin-top:6px;">Удалить текущий видеофайл</button>
+        {% endif %}
+      </label>
+      <label>
+        <div class="muted">{{ form.video_preview.label }}</div>
+        {{ form.video_preview }}
+        {{ form.video_preview.errors }}
+        {% if mode == "edit" and form.instance.video_preview %}
+          <div class="muted" style="margin-top:6px;">
+            Текущее превью: <a href="{{ form.instance.video_preview.url }}" target="_blank">открыть</a>
+          </div>
+          <button class="btn" type="submit" formaction="{% url 'academy:psych_content_remove_video_preview' form.instance.id %}" formmethod="post" style="background:#8b1e1e; margin-top:6px;">Удалить текущее превью</button>
+        {% endif %}
+      </label>
+      <button class="btn" type="submit">Сохранить материал</button>
+      {% if mode == "edit" and form.instance.content_type == "test" %}
+        <a class="btn" href="{% url 'academy:psych_test_editor' form.instance.id %}" style="margin-top:6px;">Настроить вопросы теста</a>
+      {% endif %}
+      {% if mode == "edit" and form.instance.content_type == "game" %}
+        <a class="btn" href="{% url 'academy:psych_game_editor' form.instance.id %}" style="margin-top:6px;">Открыть редактор игры</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+{{ form.media }}
+<script>
+  (function () {
+    const typeField = document.getElementById("id_content_type");
+    const articleWrapper = document.getElementById("id_article_body")?.closest("label");
+    const videoUrlField = document.getElementById("id_video_url")?.closest("label");
+    const videoFileField = document.getElementById("id_video_file")?.closest("label");
+    const videoPreviewField = document.getElementById("id_video_preview")?.closest("label");
+
+    const toggleBlocks = () => {
+      const selected = typeField?.value;
+      const isArticle = selected === "article";
+      const isVideo = selected === "video";
+      if (articleWrapper) articleWrapper.style.display = isArticle ? "block" : "none";
+      if (videoUrlField) videoUrlField.style.display = isVideo ? "block" : "none";
+      if (videoFileField) videoFileField.style.display = isVideo ? "block" : "none";
+      if (videoPreviewField) videoPreviewField.style.display = isVideo ? "block" : "none";
+    };
+    typeField?.addEventListener("change", toggleBlocks);
+    toggleBlocks();
+  })();
+</script>
+{% endblock %}
+

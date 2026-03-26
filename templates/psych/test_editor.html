@@ -1,0 +1,46 @@
+{% extends "psych/base.html" %}
+{% block title %}Редактор теста{% endblock %}
+{% block psych_content %}
+<div class="card">
+  <h2 style="margin-top:0;">Тест: {{ content.title }}</h2>
+  <div class="muted">Урок: {{ content.lesson.title }}</div>
+  <a class="btn" href="{% url 'academy:psych_test_question_create' content.id %}" style="margin-top:10px;">+ Добавить вопрос</a>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0;">Вопросы</h3>
+  <ol>
+    {% for q in questions %}
+      <li style="margin-bottom:12px;">
+        <strong>{{ q.question_text }}</strong>
+        <span class="badge">{{ q.get_question_type_display }}</span>
+        {% if q.image %}
+          <div style="margin-top:6px;"><img src="{{ q.image.url }}" alt="Картинка вопроса" style="max-width:260px; border-radius:8px;"></div>
+        {% endif %}
+        <a class="btn" href="{% url 'academy:psych_test_question_edit' q.id %}" style="padding:4px 8px; margin-left:8px;">Изменить</a>
+        <form method="post" action="{% url 'academy:psych_test_question_delete' q.id %}" style="display:inline;">
+          {% csrf_token %}
+          <button class="btn" type="submit" style="padding:4px 8px; background:#8b1e1e;">Удалить</button>
+        </form>
+        {% if q.question_type != "open" %}
+          <ul>
+            {% for o in q.options.all %}
+              <li>
+                {{ o.option_text }}
+                {% if o.is_correct %}<span class="badge">правильный</span>{% endif %}
+              </li>
+            {% empty %}
+              <li class="muted">Варианты пока не добавлены.</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="muted" style="margin-top:6px;">Открытый вопрос: ответ вводится текстом, анализ делает ИИ.</div>
+        {% endif %}
+      </li>
+    {% empty %}
+      <li>Вопросов пока нет.</li>
+    {% endfor %}
+  </ol>
+</div>
+{% endblock %}
+

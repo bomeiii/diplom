@@ -1,0 +1,172 @@
+{% extends "psych/base.html" %}
+{% block title %}Редактирование урока{% endblock %}
+{% block psych_content %}
+<div class="card">
+  <h2 style="margin-top:0;">Урок: {{ lesson.title }}</h2>
+  <div class="muted">Курс: <a href="{% url 'academy:psych_course_edit' course.id %}">{{ course.title }}</a></div>
+  <form method="post" style="margin-top:12px;">
+    {% csrf_token %}
+    <div style="display:grid; gap:12px;">
+      {{ form.non_field_errors }}
+      <label>
+        <div class="muted">{{ form.title.label }}</div>
+        {{ form.title }}
+        {{ form.title.errors }}
+      </label>
+      <label>
+        <div class="muted">{{ form.order.label }}</div>
+        {{ form.order }}
+        {{ form.order.errors }}
+      </label>
+      <label>{{ form.is_private }} {{ form.is_private.label }}</label>
+      {% url 'academy:lesson_detail' lesson.id as private_lesson_path %}
+      <div id="private-lesson-link-block" class="card" style="margin:0; display:none; background:#f5f8ff; border:1px solid #dbe6ff;">
+        <div class="muted" style="margin-bottom:6px;">Ссылка на закрытый урок:</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <a id="private-lesson-link" href="{{ request.scheme }}://{{ request.get_host }}{{ private_lesson_path }}?lesson_access={{ lesson.private_access_token }}{% if course.is_private %}&access={{ course.private_access_token }}{% endif %}" target="_blank">
+            {{ request.scheme }}://{{ request.get_host }}{{ private_lesson_path }}?lesson_access={{ lesson.private_access_token }}{% if course.is_private %}&access={{ course.private_access_token }}{% endif %}
+          </a>
+          <button id="copy-private-lesson-link" type="button" class="btn">Скопировать ссылку</button>
+        </div>
+      </div>
+      <button class="btn" type="submit">Сохранить урок</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap: wrap;">
+    <h3 style="margin:0;">Материалы урока</h3>
+    <a class="btn" href="{% url 'academy:psych_content_create' %}?lesson_id={{ lesson.id }}">+ Добавить материал</a>
+  </div>
+  <form method="post" action="{% url 'academy:psych_contents_reorder' lesson.id %}" style="margin-top:12px;">
+    {% csrf_token %}
+    <input type="hidden" id="ordered-ids" name="ordered_ids">
+    <button class="btn" type="submit">Сохранить порядок блоков</button>
+  </form>
+  <div id="content-blocks" style="margin-top:12px; display:grid; gap:10px;">
+    {% for c in contents %}
+      <div class="card content-block" draggable="true" data-id="{{ c.id }}" style="margin:0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <div>
+            <strong style="cursor:grab;">↕ Блок {{ c.order }}</strong> — <a href="{% url 'academy:psych_content_edit' c.id %}">{{ c.title }}</a>
+            {% if c.content_type == "test" %}
+              <a class="btn" href="{% url 'academy:psych_test_editor' c.id %}" style="padding:4px 8px; margin-left:8px;">Настроить тест</a>
+            {% elif c.content_type == "game" %}
+              <a class="btn" href="{% url 'academy:psych_game_editor' c.id %}" style="padding:4px 8px; margin-left:8px;">Редактор игры</a>
+            {% endif %}
+          </div>
+          <form method="post" action="{% url 'academy:psych_content_delete' c.id %}" style="display:inline;">
+          {% csrf_token %}
+          <button class="btn" type="submit" style="background:#8b1e1e; padding:6px 10px; margin-left:10px;">Удалить</button>
+        </form>
+        </div>
+      </div>
+    {% empty %}
+      <div>Материалов пока нет.</div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+    <h3 style="margin:0;">Результаты по уроку</h3>
+    <form method="post" action="{% url 'academy:psych_lesson_results_delete_all' lesson.id %}">
+      {% csrf_token %}
+      <button class="btn" type="submit" style="background:#8b1e1e;">Удалить все результаты урока</button>
+    </form>
+  </div>
+  <ul>
+    {% for result in lesson_results %}
+      <li style="margin-bottom:8px;">
+        <strong>{{ result.child }}</strong> —
+        {% if result.content %}{{ result.content.title }}{% else %}Без блока{% endif %},
+        {{ result.total_score }} баллов
+        <div class="muted">{{ result.created_at|date:"d.m.Y H:i" }}</div>
+        {% if result.selected_answers %}
+          <div style="margin-top:6px;">
+            <strong>Выбранные ответы:</strong>
+            <ul>
+              {% for row in result.selected_answers %}
+                <li>
+                  <div><strong>Вопрос:</strong> {{ row.question }}</div>
+                  <div><strong>Ответ пользователя:</strong> {{ row.selected }}</div>
+                  {% if row.correct %}
+                    <div class="muted"><strong>Правильный вариант:</strong> {{ row.correct }}</div>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+        <form method="post" action="{% url 'academy:psych_result_delete' result.id %}" style="margin-top:6px;">
+          {% csrf_token %}
+          <button class="btn" type="submit" style="background:#8b1e1e; padding:4px 8px;">Удалить результат</button>
+        </form>
+      </li>
+    {% empty %}
+      <li>Результатов пока нет.</li>
+    {% endfor %}
+  </ul>
+</div>
+<script>
+  (function () {
+    const privateCheckbox = document.getElementById("id_is_private");
+    const privateBlock = document.getElementById("private-lesson-link-block");
+    const copyButton = document.getElementById("copy-private-lesson-link");
+    const privateLink = document.getElementById("private-lesson-link");
+    if (!privateCheckbox || !privateBlock) return;
+
+    const updateVisibility = () => {
+      privateBlock.style.display = privateCheckbox.checked ? "block" : "none";
+    };
+    updateVisibility();
+    privateCheckbox.addEventListener("change", updateVisibility);
+
+    if (copyButton && privateLink) {
+      copyButton.addEventListener("click", async function () {
+        try {
+          await navigator.clipboard.writeText(privateLink.href);
+          copyButton.textContent = "Скопировано";
+          setTimeout(() => {
+            copyButton.textContent = "Скопировать ссылку";
+          }, 1200);
+        } catch (err) {
+          copyButton.textContent = "Не удалось";
+        }
+      });
+    }
+
+    const container = document.getElementById("content-blocks");
+    const orderInput = document.getElementById("ordered-ids");
+    if (!container || !orderInput) return;
+    let dragged = null;
+    const updateOrder = () => {
+      const ids = [...container.querySelectorAll(".content-block")].map((el) => el.dataset.id);
+      orderInput.value = ids.join(",");
+    };
+    updateOrder();
+    container.querySelectorAll(".content-block").forEach((block) => {
+      block.addEventListener("dragstart", () => {
+        dragged = block;
+      });
+      block.addEventListener("dragover", (e) => {
+        e.preventDefault();
+      });
+      block.addEventListener("drop", () => {
+        if (!dragged || dragged === block) return;
+        const blocks = [...container.querySelectorAll(".content-block")];
+        const draggedIndex = blocks.indexOf(dragged);
+        const targetIndex = blocks.indexOf(block);
+        if (draggedIndex < targetIndex) {
+          container.insertBefore(dragged, block.nextSibling);
+        } else {
+          container.insertBefore(dragged, block);
+        }
+        updateOrder();
+      });
+    });
+  })();
+</script>
+{% endblock %}
+
