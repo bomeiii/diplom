@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ lesson.title }}{% endblock %}
+{% block content %}
+<div class="card">
+    <h2>{{ lesson.title }}</h2>
+    <p>Курс: <a href="{% url 'academy:course_detail' lesson.course.id %}">{{ lesson.course.title }}</a></p>
+</div>
+
+{% for content in contents %}
+    <div class="card">
+        <h3>{{ content.get_content_type_display }}: {{ content.title }}</h3>
+
+        {% if content.content_type == "article" %}
+            <div>{{ content.article_body|linebreaksbr }}</div>
+        {% elif content.content_type == "video" %}
+            <p>Ссылка на видео: <a href="{{ content.video_url }}" target="_blank">{{ content.video_url }}</a></p>
+        {% elif content.content_type == "test" %}
+            <form method="post" action="{% url 'academy:submit_test' content.id %}">
+                {% csrf_token %}
+                <p><label>Имя ребёнка: <input type="text" name="child_name" required></label></p>
+                {% for question in content.questions.all %}
+                    <p><strong>{{ forloop.counter }}. {{ question.question_text }}</strong></p>
+                    {% if question.question_type == "open" %}
+                        <textarea name="q_{{ question.id }}_open" rows="3" style="width:100%;"></textarea>
+                    {% else %}
+                        {% for option in question.options.all %}
+                            <label style="display:block;">
+                                <input
+                                    type="{% if question.question_type == 'multi' %}checkbox{% else %}radio{% endif %}"
+                                    name="q_{{ question.id }}"
+                                    value="{{ option.id }}"
+                                >
+                                {{ option.option_text }}
+                            </label>
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+                <button class="btn" type="submit">Сохранить тест и анализ</button>
+            </form>
+        {% elif content.content_type == "game" %}
+            {% if content.game_scenario %}
+                <p><strong>Сценарий:</strong> {{ content.game_scenario.title }}</p>
+                <p>{{ content.game_scenario.intro_text|linebreaksbr }}</p>
+                <h4>Локации и шаги:</h4>
+                <ul>
+                    {% for location in content.game_scenario.locations.all %}
+                        <li>
+                            <strong>{{ location.name }}</strong>
+                            <ul>
+                                {% for step in location.steps.all %}
+                                    <li>
+                                        {{ step.step_text }}
+                                        {% if step.character %}(Персонаж: {{ step.character.name }}){% endif %}
+                                        {% if step.open_answer_allowed %}<span class="badge">открытый ответ</span>{% endif %}
+                                        <ul>
+                                            {% for option in step.options.all %}
+                                                <li>{{ option.option_text }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Игровой сценарий пока не создан.</p>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endfor %}
+{% endblock %}

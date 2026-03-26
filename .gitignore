@@ -1,0 +1,68 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+
+# --- Virtual environments ---
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+*.env
+
+# --- Django ---
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# If you collect static into a project-level folder named "static"
+# comment this out if you actually version static assets here.
+static/
+
+# --- IDEs / editors ---
+.idea/
+.vscode/
+*.code-workspace
+
+# --- Cursor ---
+.cursor/
+
+# --- OS junk (Windows/macOS/Linux) ---
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+.DS_Store
+.AppleDouble
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+
+# --- Build / distribution ---
+build/
+dist/
+*.whl
+

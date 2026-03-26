@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Добро пожаловать{% endblock %}
+{% block content %}
+<h1>Добро пожаловать</h1>
+
+<div class="grid">
+    {% for psychologist in psychologists %}
+    <div class="card">
+        {% if psychologist.photo_url %}
+        <img src="{{ psychologist.photo_url }}" alt="Фото"
+            style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;">
+        {% endif %}
+        <h3>{{ psychologist.last_name }} {{ psychologist.first_name }}</h3>
+        <p><span class="badge">{{ psychologist.specialization }}</span></p>
+        <p class="muted">{{ psychologist.bio|default:"Описание пока не заполнено." }}</p>
+        <a class="btn" href="{% url 'academy:psychologist_dashboard' psychologist.id %}">Открыть профиль</a>
+    </div>
+    {% empty %}
+    <p>Психологи пока не добавлены.</p>
+    {% endfor %}
+</div>
+{% endblock %}

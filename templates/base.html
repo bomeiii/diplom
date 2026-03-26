@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Платформа психологов{% endblock %}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f7f8fb; color: #222; }
+        header { background: #2f4f93; color: #fff; padding: 16px 24px; }
+        main { padding: 24px; max-width: 1000px; margin: 0 auto; }
+        .card { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+        .muted { color: #666; }
+        .btn { display: inline-block; padding: 8px 14px; border-radius: 8px; text-decoration: none; background: #2f4f93; color: #fff; border: none; cursor: pointer; }
+        .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+        .badge { background: #eff3ff; color: #2f4f93; border-radius: 8px; padding: 2px 8px; font-size: 12px; }
+        ul { margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <header>
+        <strong>Демо-платформа психологических курсов</strong>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

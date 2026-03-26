@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Сводная аналитика{% endblock %}
+{% block content %}
+<div class="card">
+    <h2>Сводная аналитика по психологам</h2>
+    <ul>
+        {% for row in rows %}
+            <li>
+                {{ row.psychologist__last_name }} {{ row.psychologist__first_name }}:
+                средний балл {{ row.avg_score|floatformat:2 }}
+            </li>
+        {% empty %}
+            <li>Данных пока нет.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

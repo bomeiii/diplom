@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ course.title }}{% endblock %}
+{% block content %}
+<div class="card">
+    <h2>{{ course.title }}</h2>
+    <p class="muted">{{ course.short_description }}</p>
+    <p>Психолог: {{ course.psychologist.last_name }} {{ course.psychologist.first_name }}</p>
+</div>
+
+<div class="card">
+    <h3>Уроки курса</h3>
+    <ol>
+        {% for lesson in lessons %}
+            <li>
+                <a href="{% url 'academy:lesson_detail' lesson.id %}">{{ lesson.title }}</a>
+                <ul>
+                    {% for content in lesson.contents.all %}
+                        <li>{{ content.get_content_type_display }}: {{ content.title }}</li>
+                    {% endfor %}
+                </ul>
+            </li>
+        {% empty %}
+            <li>Уроки не добавлены.</li>
+        {% endfor %}
+    </ol>
+</div>
+{% endblock %}
