@@ -32,6 +32,7 @@ urlpatterns = [
     path("psych/games/<int:content_id>/avatars/builder/", views.psych_avatar_builder, name="psych_avatar_builder"),
     path("psych/games/<int:content_id>/avatars/create/", views.psych_avatar_create, name="psych_avatar_create"),
     path("psych/tests/<int:content_id>/", views.psych_test_editor, name="psych_test_editor"),
+    path("psych/tests/<int:content_id>/save/", views.psych_test_builder_save, name="psych_test_builder_save"),
     path("psych/tests/<int:content_id>/questions/new/", views.psych_test_question_create, name="psych_test_question_create"),
     path("psych/tests/questions/<int:question_id>/edit/", views.psych_test_question_edit, name="psych_test_question_edit"),
     path("psych/tests/questions/<int:question_id>/remove-image/", views.psych_test_question_remove_image, name="psych_test_question_remove_image"),

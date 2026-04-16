@@ -160,8 +160,11 @@ def submit_test(request: HttpRequest, content_id: int) -> HttpResponse:
         )
         correct_ids = set(options_qs.filter(is_correct=True).values_list("id", flat=True))
         if correct_ids:
+            # Баллы учитываются только при полностью правильном ответе.
             if selected_ids == correct_ids:
-                total_score += 1
+                scored = list(options_qs.filter(id__in=selected_ids))
+                score_sum = sum(o.score for o in scored)
+                total_score += score_sum if score_sum > 0 else 1
         else:
             options = options_qs.filter(id__in=selected_ids)
             total_score += sum(option.score for option in options)
@@ -439,8 +442,116 @@ def psych_test_editor(request: HttpRequest, content_id: int) -> HttpResponse:
         logout(request)
         return redirect("academy:psych_login")
     content = _get_psych_content_or_404(psychologist, content_id)
-    questions = content.questions.prefetch_related("options").all()
-    return render(request, "psych/test_editor.html", {"psychologist": psychologist, "content": content, "questions": questions})
+    questions = (
+        content.questions.prefetch_related("options")
+        .all()
+    )
+    payload = []
+    for q in questions:
+        payload.append(
+            {
+                "id": q.id,
+                "question_text": q.question_text,
+                "help_text": q.help_text,
+                "question_type": q.question_type,
+                "is_required": q.is_required,
+                "shuffle_options": q.shuffle_options,
+                "answers_view": q.answers_view,
+                "order": q.order,
+                "identifier": q.identifier,
+                "has_image": bool(q.image),
+                "options": [
+                    {
+                        "id": o.id,
+                        "option_text": o.option_text,
+                        "score": o.score,
+                        "is_correct": o.is_correct,
+                        "is_hidden": o.is_hidden,
+                        "order": o.order,
+                        "identifier": o.identifier,
+                    }
+                    for o in q.options.all().order_by("order", "id")
+                ],
+            }
+        )
+    return render(
+        request,
+        "psych/test_editor.html",
+        {
+            "psychologist": psychologist,
+            "content": content,
+            "questions": questions,
+            "builder_json": json.dumps(payload, ensure_ascii=False),
+        },
+    )
+
+
+@login_required
+@require_http_methods(["POST"])
+def psych_test_builder_save(request: HttpRequest, content_id: int) -> HttpResponse:
+    try:
+        psychologist = _get_current_psychologist(request)
+    except Psychologist.DoesNotExist:
+        logout(request)
+        return redirect("academy:psych_login")
+    content = _get_psych_content_or_404(psychologist, content_id)
+
+    raw_payload = request.POST.get("payload") or ""
+    try:
+        data = json.loads(raw_payload) if raw_payload else []
+    except json.JSONDecodeError:
+        data = []
+
+    seen_question_ids: set[int] = set()
+    for idx, item in enumerate(data, start=1):
+        q_id = item.get("id")
+        if q_id:
+            question = content.questions.filter(pk=q_id).first()
+        else:
+            question = None
+        if question is None:
+            question = TestQuestion(content=content)
+        question.question_text = (item.get("question_text") or "").strip()
+        question.help_text = (item.get("help_text") or "").strip()
+        question.question_type = item.get("question_type") or TestQuestion.SINGLE
+        question.is_required = bool(item.get("is_required", True))
+        question.shuffle_options = bool(item.get("shuffle_options", False))
+        view_value = item.get("answers_view") or TestQuestion.ANSWERS_VIEW_TILE
+        if view_value not in dict(TestQuestion.ANSWERS_VIEW_CHOICES):
+            view_value = TestQuestion.ANSWERS_VIEW_TILE
+        question.answers_view = view_value
+        question.order = int(item.get("order") or idx)
+        question.save()
+        seen_question_ids.add(question.id)
+
+        options = item.get("options") or []
+        seen_option_ids: set[int] = set()
+        for o_idx, o_item in enumerate(options, start=1):
+            o_id = o_item.get("id")
+            if o_id:
+                opt = question.options.filter(pk=o_id).first()
+            else:
+                opt = None
+            if opt is None:
+                opt = TestOption(question=question)
+            opt.option_text = (o_item.get("option_text") or "").strip()
+            try:
+                opt.score = int(o_item.get("score") or 0)
+            except (TypeError, ValueError):
+                opt.score = 0
+            opt.is_correct = bool(o_item.get("is_correct", False))
+            opt.is_hidden = bool(o_item.get("is_hidden", False))
+            opt.order = int(o_item.get("order") or o_idx)
+            opt.save()
+            seen_option_ids.add(opt.id)
+
+        # удалить варианты, которых нет в payload
+        question.options.exclude(pk__in=seen_option_ids).delete()
+
+    # удалить вопросы, которых нет в payload
+    content.questions.exclude(pk__in=seen_question_ids).delete()
+
+    return redirect("academy:psych_test_editor", content_id=content.id)
 
 
 @login_required

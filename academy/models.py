@@ -8,6 +8,10 @@ def generate_private_access_token() -> str:
     return uuid.uuid4().hex
 
 
+def generate_test_identifier() -> str:
+    return uuid.uuid4().hex
+
+
 class Psychologist(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -169,6 +173,19 @@ class TestQuestion(models.Model):
     image = models.ImageField(upload_to="test_questions/", blank=True, null=True)
     question_type = models.CharField(max_length=20, choices=QUESTION_TYPE_CHOICES, default=SINGLE)
     order = models.PositiveIntegerField(default=1)
+    help_text = models.TextField(blank=True)
+    is_required = models.BooleanField(default=True)
+    shuffle_options = models.BooleanField(default=False)
+    ANSWERS_VIEW_TILE = "tile"
+    ANSWERS_VIEW_ROW = "row"
+    ANSWERS_VIEW_STARS = "stars"
+    ANSWERS_VIEW_CHOICES = [
+        (ANSWERS_VIEW_TILE, "Плитка"),
+        (ANSWERS_VIEW_ROW, "В один ряд"),
+        (ANSWERS_VIEW_STARS, "Звезды"),
+    ]
+    answers_view = models.CharField(max_length=20, choices=ANSWERS_VIEW_CHOICES, default=ANSWERS_VIEW_TILE)
+    identifier = models.CharField(max_length=64, default=generate_test_identifier, editable=False)
 
     class Meta:
         ordering = ["order", "id"]
@@ -182,6 +199,9 @@ class TestOption(models.Model):
     option_text = models.CharField(max_length=255)
     score = models.IntegerField(default=0)
     is_correct = models.BooleanField(default=False)
+    is_hidden = models.BooleanField(default=False)
+    order = models.PositiveIntegerField(default=1)
+    identifier = models.CharField(max_length=64, default=generate_test_identifier, editable=False)
 
     def __str__(self):
         return self.option_text

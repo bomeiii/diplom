@@ -75,17 +75,25 @@
                         <p><img src="{{ question.image.url }}" alt="Картинка вопроса" style="max-width:360px; border-radius:8px;"></p>
                     {% endif %}
                     {% if question.question_type == "open" %}
-                        <textarea name="q_{{ question.id }}_open" rows="3" style="width:100%;"></textarea>
+                        <textarea name="q_{{ question.id }}_open" rows="3" style="width:100%;" {% if question.is_required %}required{% endif %}></textarea>
                     {% else %}
+                        {% with opts=question.options.all %}
+                          {% if question.shuffle_options %}
+                            {% regroup opts|dictsort:"order"|random by "" as opt_groups %}
+                          {% endif %}
+                        {% endwith %}
                         {% for option in question.options.all %}
-                            <label style="display:block;">
-                                <input
-                                    type="{% if question.question_type == 'multi' %}checkbox{% else %}radio{% endif %}"
-                                    name="q_{{ question.id }}"
-                                    value="{{ option.id }}"
-                                >
-                                {{ option.option_text }}
-                            </label>
+                            {% if not option.is_hidden %}
+                              <label style="display:block;" class="test-option test-option-{{ question.answers_view }}">
+                                  <input
+                                      type="{% if question.question_type == 'multi' %}checkbox{% else %}radio{% endif %}"
+                                      name="q_{{ question.id }}"
+                                      value="{{ option.id }}"
+                                      {% if question.is_required and question.question_type != "multi" %}required{% endif %}
+                                  >
+                                  {{ option.option_text }}
+                              </label>
+                            {% endif %}
                         {% endfor %}
                     {% endif %}
                 {% endfor %}
