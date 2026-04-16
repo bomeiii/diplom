@@ -77,11 +77,6 @@
                     {% if question.question_type == "open" %}
                         <textarea name="q_{{ question.id }}_open" rows="3" style="width:100%;" {% if question.is_required %}required{% endif %}></textarea>
                     {% else %}
-                        {% with opts=question.options.all %}
-                          {% if question.shuffle_options %}
-                            {% regroup opts|dictsort:"order"|random by "" as opt_groups %}
-                          {% endif %}
-                        {% endwith %}
                         {% for option in question.options.all %}
                             {% if not option.is_hidden %}
                               <label style="display:block;" class="test-option test-option-{{ question.answers_view }}">

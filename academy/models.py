@@ -2,6 +2,9 @@ from django.conf import settings
 from django.db import models
 import uuid
 from urllib.parse import parse_qs, urlparse
+from urllib.request import urlopen
+from urllib.error import URLError
+import json
 
 
 def generate_private_access_token() -> str:
@@ -130,7 +133,13 @@ class LessonContent(models.Model):
 
     def get_video_preview_url(self) -> str:
         if self.video_preview:
-            return self.video_preview.url
+            exists_in_storage = False
+            try:
+                exists_in_storage = self.video_preview.storage.exists(self.video_preview.name)
+            except Exception:
+                exists_in_storage = False
+            if exists_in_storage:
+                return self.video_preview.url
         if not self.video_url:
             return ""
 
@@ -150,6 +159,25 @@ class LessonContent(models.Model):
                 video_id = path.split("/")[1] if len(path.split("/")) > 1 else ""
                 return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg" if video_id else ""
 
+        if "rutube.ru" in host:
+            video_id = ""
+            if "/video/" in f"/{path}":
+                parts = path.split("/")
+                try:
+                    video_idx = parts.index("video")
+                    video_id = parts[video_idx + 1]
+                except (ValueError, IndexError):
+                    video_id = ""
+            if video_id:
+                try:
+                    with urlopen(f"https://rutube.ru/api/video/{video_id}/", timeout=2) as response:
+                        body = response.read().decode("utf-8")
+                        payload = json.loads(body)
+                        thumb = payload.get("thumbnail_url") or payload.get("preview_url") or ""
+                        if thumb:
+                            return thumb
+                except (URLError, TimeoutError, ValueError, json.JSONDecodeError):
+                    pass
         return ""
 
 
