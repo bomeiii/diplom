@@ -38,7 +38,7 @@ staticfiles/
 
 # If you collect static into a project-level folder named "static"
 # comment this out if you actually version static assets here.
-static/
+# static/
 
 # --- IDEs / editors ---
 .idea/
