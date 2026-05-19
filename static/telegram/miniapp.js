@@ -20,7 +20,7 @@
     }
   });
 
-  document.body.classList.add("twa-mode");
+  document.body.classList.add("twa-telegram");
 
   const initUrl = document.body.dataset.telegramInitUrl;
   if (initUrl && tg.initData) {
