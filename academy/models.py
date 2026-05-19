@@ -34,6 +34,7 @@ class Psychologist(models.Model):
 
 
 class ChildProfile(models.Model):
+    telegram_user_id = models.BigIntegerField(null=True, blank=True, unique=True, db_index=True)
     first_name = models.CharField(max_length=120)
     last_name = models.CharField(max_length=120, blank=True)
     age = models.PositiveSmallIntegerField(null=True, blank=True)

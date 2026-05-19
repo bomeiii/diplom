@@ -1,6 +1,7 @@
 from django.db.models import Avg
 import json
-from django.http import HttpRequest, HttpResponse
+from django.conf import settings
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.http import Http404
 from django.contrib.auth import authenticate, login, logout
@@ -9,7 +10,9 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
 from django.urls import reverse
 
+from .child_utils import resolve_child_profile
 from .forms import CourseForm, LessonContentForm, LessonForm, TestOptionForm, TestQuestionForm
+from .telegram_auth import extract_init_data, parse_telegram_user, validate_init_data
 from .models import (
     AvatarPartAsset,
     BackgroundAsset,
@@ -42,9 +45,42 @@ def home(request: HttpRequest) -> HttpResponse:
     return render(request, "academy/home.html", context)
 
 
+@require_http_methods(["POST"])
+@csrf_protect
+def telegram_init(request: HttpRequest) -> JsonResponse:
+    """Сохраняет пользователя Telegram в сессии после проверки initData."""
+    if not settings.TELEGRAM_BOT_TOKEN:
+        return JsonResponse({"ok": False, "error": "bot_not_configured"}, status=503)
+
+    init_data = extract_init_data(request)
+    parsed = validate_init_data(init_data, settings.TELEGRAM_BOT_TOKEN)
+    if not parsed:
+        return JsonResponse({"ok": False, "error": "invalid_init_data"}, status=400)
+
+    user = parse_telegram_user(parsed)
+    if not user:
+        return JsonResponse({"ok": False, "error": "no_user"}, status=400)
+
+    request.session["telegram_user"] = user
+    return JsonResponse(
+        {
+            "ok": True,
+            "user": {
+                "id": user["id"],
+                "first_name": user.get("first_name", ""),
+                "last_name": user.get("last_name", ""),
+                "username": user.get("username", ""),
+            },
+        }
+    )
+
+
 def psychologist_dashboard(request: HttpRequest, psychologist_id: int) -> HttpResponse:
     psychologist = get_object_or_404(Psychologist, pk=psychologist_id)
-    courses = psychologist.courses.all().order_by("title")
+    courses = psychologist.courses.all()
+    if not _is_psychologist_owner(request, psychologist_id):
+        courses = courses.filter(is_published=True)
+    courses = courses.order_by("title")
     context = {
         "psychologist": psychologist,
         "courses": courses,
@@ -52,15 +88,27 @@ def psychologist_dashboard(request: HttpRequest, psychologist_id: int) -> HttpRe
     return render(request, "academy/psychologist_dashboard.html", context)
 
 
+def _is_psychologist_owner(request: HttpRequest, psychologist_id: int) -> bool:
+    return request.user.is_authenticated and Psychologist.objects.filter(
+        user=request.user, pk=psychologist_id
+    ).exists()
+
+
 def _has_private_course_access(request: HttpRequest, course: Course) -> bool:
-    if request.user.is_authenticated and Psychologist.objects.filter(user=request.user, pk=course.psychologist_id).exists():
+    if _is_psychologist_owner(request, course.psychologist_id):
         return True
     access_token = (request.GET.get("access") or request.POST.get("access") or "").strip()
     return bool(access_token and access_token == course.private_access_token)
 
 
+def _can_view_course(request: HttpRequest, course: Course) -> bool:
+    if course.is_published or _is_psychologist_owner(request, course.psychologist_id):
+        return True
+    return course.is_private and _has_private_course_access(request, course)
+
+
 def _has_private_lesson_access(request: HttpRequest, lesson: Lesson) -> bool:
-    if request.user.is_authenticated and Psychologist.objects.filter(user=request.user, pk=lesson.course.psychologist_id).exists():
+    if _is_psychologist_owner(request, lesson.course.psychologist_id):
         return True
     access_token = (request.GET.get("lesson_access") or request.POST.get("lesson_access") or "").strip()
     return bool(access_token and access_token == lesson.private_access_token)
@@ -68,6 +116,8 @@ def _has_private_lesson_access(request: HttpRequest, lesson: Lesson) -> bool:
 
 def course_detail(request: HttpRequest, course_id: int) -> HttpResponse:
     course = get_object_or_404(Course.objects.select_related("psychologist"), pk=course_id)
+    if not _can_view_course(request, course):
+        raise Http404("Курс недоступен.")
     if course.is_private and not _has_private_course_access(request, course):
         raise Http404("Курс доступен только по приватной ссылке.")
     lessons = course.lessons.prefetch_related("contents").all()
@@ -107,13 +157,12 @@ def submit_test(request: HttpRequest, content_id: int) -> HttpResponse:
         pk=content_id,
         content_type=LessonContent.TEST,
     )
-    child_name = request.POST.get("child_name", "").strip() or "Ребёнок"
     course = content.lesson.course
     if course.is_private and not _has_private_course_access(request, course):
         raise Http404("Тест доступен только по приватной ссылке.")
     if content.lesson.is_private and not _has_private_lesson_access(request, content.lesson):
         raise Http404("Тест доступен только по приватной ссылке.")
-    child, _ = ChildProfile.objects.get_or_create(first_name=child_name)
+    child, _ = resolve_child_profile(request)
 
     total_score = 0
     open_answers = []
@@ -205,8 +254,7 @@ def submit_game(request: HttpRequest, content_id: int) -> HttpResponse:
     if content.lesson.is_private and not _has_private_lesson_access(request, content.lesson):
         raise Http404("Игра доступна только по приватной ссылке.")
 
-    child_name = request.POST.get("child_name", "").strip() or "Ребёнок"
-    child, _ = ChildProfile.objects.get_or_create(first_name=child_name)
+    child, _ = resolve_child_profile(request)
     scene_id = request.POST.get("scene_id")
     scene = content.game_scenes.filter(pk=scene_id).first() if scene_id and scene_id.isdigit() else None
     answer_text = (request.POST.get("game_open_answer") or "").strip()

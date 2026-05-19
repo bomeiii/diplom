@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "twa_base.html" %}
 {% block title %}{{ lesson.title }}{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
@@ -68,7 +68,7 @@
                 {% csrf_token %}
                 {% if access_token %}<input type="hidden" name="access" value="{{ access_token }}">{% endif %}
                 {% if lesson_access_token %}<input type="hidden" name="lesson_access" value="{{ lesson_access_token }}">{% endif %}
-                <p><label>Имя ребёнка: <input type="text" name="child_name" required></label></p>
+                <p class="child-name-field"><label>Имя ребёнка: <input type="text" name="child_name" {% if not telegram_user %}required{% endif %}></label></p>
                 {% for question in content.questions.all %}
                     <p><strong>{{ forloop.counter }}. {{ question.question_text }}</strong></p>
                     {% if question.image %}
@@ -99,7 +99,7 @@
               {% if scenes %}
                 <form method="post" action="{% url 'academy:submit_game' content.id %}">
                   {% csrf_token %}
-                  <p><label>Имя ребёнка: <input type="text" name="child_name" required></label></p>
+                  <p class="child-name-field"><label>Имя ребёнка: <input type="text" name="child_name" {% if not telegram_user %}required{% endif %}></label></p>
                   <label>
                     <div class="muted">Сцена</div>
                     <select name="scene_id" id="scene-select-{{ content.id }}" onchange="window.updateGameScene{{ content.id }}()">

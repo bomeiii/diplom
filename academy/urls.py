@@ -6,6 +6,7 @@ app_name = "academy"
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("api/telegram/init/", views.telegram_init, name="telegram_init"),
     path("analytics/", views.analytics_overview, name="analytics_overview"),
     path("psychologist/<int:psychologist_id>/", views.psychologist_dashboard, name="psychologist_dashboard"),
     path("course/<int:course_id>/", views.course_detail, name="course_detail"),
