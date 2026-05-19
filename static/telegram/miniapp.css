@@ -1,5 +1,0 @@
-/* Дополнительные стили для Telegram Mini App (основные — в twa_base.html). */
-
-body.twa-telegram .child-name-field {
-  display: none;
-}
