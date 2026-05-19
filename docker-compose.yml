@@ -7,10 +7,6 @@ services:
       - .env
     volumes:
       - media_data:/app/media
-      - db_data:/app/data
-    environment:
-      DJANGO_DB_NAME: /app/data/db.sqlite3
 
 volumes:
   media_data:
-  db_data:
