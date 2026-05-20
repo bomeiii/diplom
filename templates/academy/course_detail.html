@@ -4,28 +4,36 @@
 <div class="card">
     <h2>{{ course.title }}</h2>
     <p class="muted">{{ course.short_description }}</p>
-    <p>Психолог: {{ course.psychologist.last_name }} {{ course.psychologist.first_name }}</p>
+    <p class="muted">Психолог: {{ course.psychologist.last_name }} {{ course.psychologist.first_name }}</p>
 </div>
 
 <div class="card">
-    <h3>Уроки курса</h3>
-    <ol>
+    <h3 class="heading-reset">Уроки курса</h3>
+    <div class="tile-list mt-md">
         {% for lesson in lessons %}
-            <li>
-                {% if lesson.is_private %}
-                    {{ lesson.title }} <span class="badge">закрытый урок</span> <span class="muted">(доступ только по ссылке)</span>
-                {% else %}
-                    <a href="{% url 'academy:lesson_detail' lesson.id %}{% if access_token %}?access={{ access_token }}{% endif %}">{{ lesson.title }}</a>
-                {% endif %}
-                <ul>
+            {% if lesson.is_private %}
+            <div class="tile-link tile-link--disabled">
+                <div class="tile-link__title">{{ lesson.title }}</div>
+                <div class="tile-link__meta">
+                    <span class="badge">закрытый урок</span>
+                    <span class="muted">доступ только по ссылке</span>
+                </div>
+            </div>
+            {% else %}
+            <a class="tile-link" href="{% url 'academy:lesson_detail' lesson.id %}{% if access_token %}?access={{ access_token }}{% endif %}">
+                <div class="tile-link__title">{{ lesson.title }}</div>
+                {% if lesson.contents.all %}
+                <div class="lesson-contents">
                     {% for content in lesson.contents.all %}
-                        <li>{{ content.title }}</li>
+                    <span class="lesson-contents__item muted">{{ content.title }}</span>
                     {% endfor %}
-                </ul>
-            </li>
+                </div>
+                {% endif %}
+            </a>
+            {% endif %}
         {% empty %}
-            <li>Уроки не добавлены.</li>
+            <p class="muted">Уроки не добавлены.</p>
         {% endfor %}
-    </ol>
+    </div>
 </div>
 {% endblock %}

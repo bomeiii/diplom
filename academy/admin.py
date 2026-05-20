@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+from django.utils.html import format_html
 
 from .models import Psychologist
 
@@ -19,10 +20,11 @@ class PsychologistAdminForm(forms.ModelForm):
 
     class Meta:
         model = Psychologist
-        fields = ("first_name", "last_name", "photo_url", "specialization", "bio")
+        fields = ("first_name", "last_name", "photo", "specialization", "bio")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["photo"].label = "Фото"
         if self.instance and self.instance.user_id:
             self.fields["username"].initial = self.instance.user.username
 
@@ -40,9 +42,40 @@ class PsychologistAdminForm(forms.ModelForm):
 
 @admin.register(Psychologist)
 class PsychologistAdmin(admin.ModelAdmin):
+    class Media:
+        css = ("css/base.css",)
+
     form = PsychologistAdminForm
     list_display = ("last_name", "first_name", "specialization", "get_username")
     search_fields = ("last_name", "first_name", "specialization")
+    readonly_fields = ("photo_preview",)
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "username",
+                    "password",
+                    "first_name",
+                    "last_name",
+                    "photo",
+                    "photo_preview",
+                    "specialization",
+                    "bio",
+                ),
+            },
+        ),
+    )
+
+    def photo_preview(self, obj: Psychologist) -> str:
+        if not obj.photo:
+            return "—"
+        return format_html(
+            '<img src="{}" alt="Фото" class="admin-photo-preview">',
+            obj.photo.url,
+        )
+
+    photo_preview.short_description = "Текущее фото"
 
     def get_username(self, obj: Psychologist) -> str:
         return obj.user.username if obj.user_id else ""

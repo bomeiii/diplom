@@ -6,8 +6,13 @@
 {% endblock %}
 {% block psych_content %}
 <div class="card">
-  <h2 style="margin-top:0;">Тест: {{ content.title }}</h2>
-  <div class="muted">Урок: {{ content.lesson.title }}</div>
+  <div class="header-bar">
+    <div>
+      <h2 class="heading-reset">Тест: {{ content.title }}</h2>
+      <div class="muted">Урок: {{ content.lesson.title }}</div>
+    </div>
+    <a class="btn" href="{% url 'academy:psych_lesson_edit' content.lesson.id %}">К материалам урока</a>
+  </div>
 </div>
 
 <form method="post" action="{% url 'academy:psych_test_builder_save' content.id %}" id="test-builder-form">
@@ -15,18 +20,18 @@
   <input type="hidden" name="payload" id="test-builder-payload">
 
   <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-      <h3 style="margin-top:0; margin-bottom:0;">Вопросы</h3>
+    <div class="header-bar">
+      <h3 class="heading-reset">Вопросы</h3>
       <button class="btn" type="button" id="add-question-btn">+ Добавить вопрос</button>
     </div>
     <div id="questions-container"></div>
-    <div style="margin-top:12px; text-align:center;">
+    <div class="mt-md text-center">
       <button class="btn" type="button" id="add-question-bottom-btn">+ Добавить вопрос</button>
     </div>
   </div>
 
-  <div style="margin-top:14px;">
-    <button class="btn" type="submit">Сохранить тест</button>
+  <div class="mt-lg">
+    <button class="btn" type="submit">Сохранить</button>
   </div>
 </form>
 {% endblock %}
@@ -36,4 +41,3 @@
 </script>
 <script src="{% static 'psych/test-builder/test-builder.js' %}"></script>
 {% endblock %}
-

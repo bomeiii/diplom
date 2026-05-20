@@ -2,11 +2,11 @@
 {% block title %}Редактирование урока{% endblock %}
 {% block psych_content %}
 <div class="card">
-  <h2 style="margin-top:0;">Урок: {{ lesson.title }}</h2>
+  <h2 class="heading-reset">Урок: {{ lesson.title }}</h2>
   <div class="muted">Курс: <a href="{% url 'academy:psych_course_edit' course.id %}">{{ course.title }}</a></div>
-  <form method="post" style="margin-top:12px;">
+  <form method="post" class="form-mt-md">
     {% csrf_token %}
-    <div style="display:grid; gap:12px;">
+    <div class="stack">
       {{ form.non_field_errors }}
       <label>
         <div class="muted">{{ form.title.label }}</div>
@@ -20,9 +20,9 @@
       </label>
       <label>{{ form.is_private }} {{ form.is_private.label }}</label>
       {% url 'academy:lesson_detail' lesson.id as private_lesson_path %}
-      <div id="private-lesson-link-block" class="card" style="margin:0; display:none; background:#f5f8ff; border:1px solid #dbe6ff;">
-        <div class="muted" style="margin-bottom:6px;">Ссылка на закрытый урок:</div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+      <div id="private-lesson-link-block" class="card card--flat card--private is-hidden">
+        <div class="muted mb-md">Ссылка на закрытый урок:</div>
+        <div class="flex-row flex-row--gap-sm">
           <a id="private-lesson-link" href="{{ request.scheme }}://{{ request.get_host }}{{ private_lesson_path }}?lesson_access={{ lesson.private_access_token }}{% if course.is_private %}&access={{ course.private_access_token }}{% endif %}" target="_blank">
             {{ request.scheme }}://{{ request.get_host }}{{ private_lesson_path }}?lesson_access={{ lesson.private_access_token }}{% if course.is_private %}&access={{ course.private_access_token }}{% endif %}
           </a>
@@ -35,30 +35,30 @@
 </div>
 
 <div class="card">
-  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap: wrap;">
-    <h3 style="margin:0;">Материалы урока</h3>
+  <div class="header-bar">
+    <h3 class="heading-reset--h3">Материалы урока</h3>
     <a class="btn" href="{% url 'academy:psych_content_create' %}?lesson_id={{ lesson.id }}">+ Добавить материал</a>
   </div>
-  <form method="post" action="{% url 'academy:psych_contents_reorder' lesson.id %}" style="margin-top:12px;">
+  <form method="post" action="{% url 'academy:psych_contents_reorder' lesson.id %}" class="form-mt-md">
     {% csrf_token %}
     <input type="hidden" id="ordered-ids" name="ordered_ids">
     <button class="btn" type="submit">Сохранить порядок блоков</button>
   </form>
-  <div id="content-blocks" style="margin-top:12px; display:grid; gap:10px;">
+  <div id="content-blocks" class="stack stack--sm mt-md">
     {% for c in contents %}
-      <div class="card content-block" draggable="true" data-id="{{ c.id }}" style="margin:0;">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+      <div class="card content-block card--flat" draggable="true" data-id="{{ c.id }}">
+        <div class="header-bar">
           <div>
-            <strong style="cursor:grab;">↕ Блок {{ c.order }}</strong> — <a href="{% url 'academy:psych_content_edit' c.id %}">{{ c.title }}</a>
+            <strong class="drag-handle">↕ Блок {{ c.order }}</strong> — <a href="{% url 'academy:psych_content_edit' c.id %}">{{ c.title }}</a>
             {% if c.content_type == "test" %}
-              <a class="btn" href="{% url 'academy:psych_test_editor' c.id %}" style="padding:4px 8px; margin-left:8px;">Настроить тест</a>
+              <a class="btn btn--sm btn--spaced-left" href="{% url 'academy:psych_test_editor' c.id %}">Настроить тест</a>
             {% elif c.content_type == "game" %}
-              <a class="btn" href="{% url 'academy:psych_game_editor' c.id %}" style="padding:4px 8px; margin-left:8px;">Редактор игры</a>
+              <a class="btn btn--sm btn--spaced-left" href="{% url 'academy:psych_game_editor' c.id %}">Редактор игры</a>
             {% endif %}
           </div>
-          <form method="post" action="{% url 'academy:psych_content_delete' c.id %}" style="display:inline;">
+          <form method="post" action="{% url 'academy:psych_content_delete' c.id %}" class="form-inline">
           {% csrf_token %}
-          <button class="btn" type="submit" style="background:#8b1e1e; padding:6px 10px; margin-left:10px;">Удалить</button>
+          <button class="btn btn--danger btn--danger-sm btn--spaced-left" type="submit">Удалить</button>
         </form>
         </div>
       </div>
@@ -69,22 +69,22 @@
 </div>
 
 <div class="card">
-  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-    <h3 style="margin:0;">Результаты по уроку</h3>
+  <div class="header-bar">
+    <h3 class="heading-reset--h3">Результаты по уроку</h3>
     <form method="post" action="{% url 'academy:psych_lesson_results_delete_all' lesson.id %}">
       {% csrf_token %}
-      <button class="btn" type="submit" style="background:#8b1e1e;">Удалить все результаты урока</button>
+      <button class="btn btn--danger" type="submit">Удалить все результаты урока</button>
     </form>
   </div>
   <ul>
     {% for result in lesson_results %}
-      <li style="margin-bottom:8px;">
+      <li class="list-item-spaced">
         <strong>{{ result.child }}</strong> —
         {% if result.content %}{{ result.content.title }}{% else %}Без блока{% endif %},
         {{ result.total_score }} баллов
         <div class="muted">{{ result.created_at|date:"d.m.Y H:i" }}</div>
         {% if result.selected_answers %}
-          <div style="margin-top:6px;">
+          <div class="mt-sm">
             <strong>Выбранные ответы:</strong>
             <ul>
               {% for row in result.selected_answers %}
@@ -99,9 +99,9 @@
             </ul>
           </div>
         {% endif %}
-        <form method="post" action="{% url 'academy:psych_result_delete' result.id %}" style="margin-top:6px;">
+        <form method="post" action="{% url 'academy:psych_result_delete' result.id %}" class="mt-sm">
           {% csrf_token %}
-          <button class="btn" type="submit" style="background:#8b1e1e; padding:4px 8px;">Удалить результат</button>
+          <button class="btn btn--danger btn--danger-xs" type="submit">Удалить результат</button>
         </form>
       </li>
     {% empty %}
@@ -118,7 +118,7 @@
     if (!privateCheckbox || !privateBlock) return;
 
     const updateVisibility = () => {
-      privateBlock.style.display = privateCheckbox.checked ? "block" : "none";
+      privateBlock.classList.toggle("is-hidden", !privateCheckbox.checked);
     };
     updateVisibility();
     privateCheckbox.addEventListener("change", updateVisibility);
@@ -169,4 +169,3 @@
   })();
 </script>
 {% endblock %}
-

@@ -92,14 +92,17 @@
     drawChoices();
   };
 
+  const updateChoicesVisibility = () => {
+    if (!choicesEditor || !answerMode) return;
+    choicesEditor.classList.toggle("is-hidden", answerMode.value !== "choices");
+  };
+
   const drawChoices = () => {
     if (!choicesList) return;
     choicesList.innerHTML = "";
     state.options.forEach((opt, idx) => {
       const wrap = document.createElement("div");
-      wrap.style.display = "grid";
-      wrap.style.gridTemplateColumns = "1fr auto auto auto";
-      wrap.style.gap = "8px";
+      wrap.className = "option-row";
       const text = document.createElement("input");
       text.value = opt.option_text;
       text.oninput = () => (opt.option_text = text.value);
@@ -110,12 +113,11 @@
       const score = document.createElement("input");
       score.type = "number";
       score.value = String(opt.score || 0);
-      score.style.width = "90px";
+      score.className = "option-score-input";
       score.oninput = () => (opt.score = parseInt(score.value || "0", 10) || 0);
       const del = document.createElement("button");
       del.type = "button";
-      del.className = "btn";
-      del.style.background = "#8b1e1e";
+      del.className = "btn btn--danger";
       del.textContent = "Удалить";
       del.onclick = () => {
         state.options.splice(idx, 1);
@@ -152,9 +154,7 @@
     render();
   });
 
-  answerMode?.addEventListener("change", () => {
-    choicesEditor.style.display = answerMode.value === "choices" ? "block" : "none";
-  });
+  answerMode?.addEventListener("change", updateChoicesVisibility);
   addChoiceBtn?.addEventListener("click", () => addChoice());
 
   bgSelect?.addEventListener("change", setCanvasBackground);
@@ -174,7 +174,7 @@
       render();
       drawChoices();
       setCanvasBackground();
-      choicesEditor.style.display = answerMode.value === "choices" ? "block" : "none";
+      updateChoicesVisibility();
     });
   });
 
@@ -199,5 +199,5 @@
   drawChoices();
   render();
   setCanvasBackground();
-  choicesEditor.style.display = answerMode?.value === "choices" ? "block" : "none";
+  updateChoicesVisibility();
 })();

@@ -1,0 +1,68 @@
+{% extends "psych/base.html" %}
+{% load static %}
+{% block title %}Мой профиль{% endblock %}
+{% block psych_content %}
+<div class="card">
+  <h2 class="heading-reset">Мой профиль</h2>
+  <p class="muted">Эти данные видят ученики на главной странице и в вашем публичном профиле.</p>
+  <form method="post" enctype="multipart/form-data" class="form-mt-md" id="profile-form">
+    {% csrf_token %}
+    <div class="stack">
+      {{ form.non_field_errors }}
+      <label>
+        <div class="muted field-label">{{ form.first_name.label }}</div>
+        {{ form.first_name }}
+        {{ form.first_name.errors }}
+      </label>
+      <label>
+        <div class="muted field-label">{{ form.last_name.label }}</div>
+        {{ form.last_name }}
+        {{ form.last_name.errors }}
+      </label>
+      <label>
+        <div class="muted field-label">{{ form.specialization.label }}</div>
+        {{ form.specialization }}
+        {{ form.specialization.errors }}
+      </label>
+      <label>
+        <div class="muted field-label">{{ form.bio.label }}</div>
+        {{ form.bio }}
+        {{ form.bio.errors }}
+      </label>
+      <div class="profile-photo-block">
+        <div class="muted field-label">{{ form.photo.label }}</div>
+        <div id="photo-preview-wrap" class="{% if not psychologist.photo %}is-hidden{% endif %}">
+          <img
+            id="photo-preview"
+            {% if psychologist.photo %}src="{{ psychologist.photo.url }}"{% endif %}
+            alt="Фото профиля"
+            class="profile-photo-preview"
+          >
+        </div>
+        {{ form.photo }}
+        {{ form.photo.errors }}
+        {% if psychologist.photo %}
+        <div class="profile-photo-actions">
+          <button
+            class="btn btn--danger"
+            type="submit"
+            formaction="{% url 'academy:psych_profile_remove_photo' %}"
+            formmethod="post"
+          >Удалить фото</button>
+        </div>
+        {% endif %}
+      </div>
+      <div class="flex-row flex-row--gap-md">
+        <button class="btn" type="submit">Сохранить</button>
+        <a class="btn" href="{% url 'academy:psych_dashboard' %}">Отмена</a>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <p class="muted">Как выглядит профиль для учеников:</p>
+  <a class="btn" href="{% url 'academy:psychologist_dashboard' psychologist.id %}" target="_blank">Открыть публичный профиль</a>
+</div>
+<script src="{% static 'psych/profile-photo.js' %}"></script>
+{% endblock %}

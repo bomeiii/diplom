@@ -2,10 +2,10 @@
 {% block title %}Вопрос теста{% endblock %}
 {% block psych_content %}
 <div class="card">
-  <h2 style="margin-top:0;">{% if mode == "create" %}Новый вопрос{% else %}Редактирование вопроса{% endif %}</h2>
+  <h2 class="heading-reset">{% if mode == "create" %}Новый вопрос{% else %}Редактирование вопроса{% endif %}</h2>
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <div style="display:grid; gap:12px;">
+    <div class="stack">
       {{ form.non_field_errors }}
       <label><div class="muted">{{ form.question_text.label }}</div>{{ form.question_text }}{{ form.question_text.errors }}</label>
       <label>
@@ -13,20 +13,20 @@
         {{ form.image }}
         {{ form.image.errors }}
         {% if mode == "edit" and form.instance.image %}
-          <div class="muted" style="margin-top:6px;">Текущая картинка: <a href="{{ form.instance.image.url }}" target="_blank">открыть</a></div>
-          <button class="btn" type="submit" formaction="{% url 'academy:psych_test_question_remove_image' form.instance.id %}" formmethod="post" style="background:#8b1e1e; margin-top:6px;">Удалить картинку</button>
+          <div class="muted mt-sm">Текущая картинка: <a href="{{ form.instance.image.url }}" target="_blank">открыть</a></div>
+          <button class="btn btn--danger btn--spaced-top" type="submit" formaction="{% url 'academy:psych_test_question_remove_image' form.instance.id %}" formmethod="post">Удалить картинку</button>
         {% endif %}
       </label>
       <label><div class="muted">{{ form.question_type.label }}</div>{{ form.question_type }}{{ form.question_type.errors }}</label>
       <label><div class="muted">{{ form.order.label }}</div>{{ form.order }}{{ form.order.errors }}</label>
 
-      <div id="options-panel" class="card" style="margin:0; display:none;">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+      <div id="options-panel" class="card card--flat is-hidden">
+        <div class="header-bar">
           <strong>Варианты ответа</strong>
           <button class="btn" type="button" id="add-option-btn">+ Добавить вариант</button>
         </div>
-        <div id="options-list" style="display:grid; gap:8px; margin-top:10px;"></div>
-        <div class="muted" style="margin-top:8px;">Отметьте галочкой справа правильные варианты.</div>
+        <div id="options-list" class="stack stack--xs options-list"></div>
+        <div class="muted options-hint">Отметьте галочкой справа правильные варианты.</div>
       </div>
       <button class="btn" type="submit">Сохранить</button>
     </div>
@@ -42,10 +42,7 @@
 
     const createRow = (value = "", isCorrect = false, score = 0) => {
       const row = document.createElement("div");
-      row.style.display = "grid";
-      row.style.gridTemplateColumns = "1fr auto auto auto";
-      row.style.gap = "8px";
-      row.style.alignItems = "center";
+      row.className = "option-row";
 
       const text = document.createElement("input");
       text.name = "option_text[]";
@@ -56,7 +53,7 @@
       scoreInput.name = "option_score[]";
       scoreInput.type = "number";
       scoreInput.value = score;
-      scoreInput.style.width = "100px";
+      scoreInput.className = "option-score-input";
 
       const correct = document.createElement("input");
       correct.type = "checkbox";
@@ -75,8 +72,7 @@
 
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
-      removeBtn.className = "btn";
-      removeBtn.style.background = "#8b1e1e";
+      removeBtn.className = "btn btn--danger";
       removeBtn.textContent = "Удалить";
       removeBtn.addEventListener("click", () => {
         row.remove();
@@ -108,11 +104,10 @@
     }
 
     const updateType = () => {
-      panel.style.display = typeField?.value === "open" ? "none" : "block";
+      panel.classList.toggle("is-hidden", typeField?.value === "open");
     };
     typeField?.addEventListener("change", updateType);
     updateType();
   })();
 </script>
 {% endblock %}
-

@@ -2,14 +2,20 @@
 {% block title %}Кабинет психолога{% endblock %}
 {% block content %}
 <div class="card">
-  <div style="display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap: wrap;">
-    <div>
-      <div class="muted">Вы вошли как психолог</div>
-      <div><strong>{{ psychologist.last_name }} {{ psychologist.first_name }}</strong></div>
-      <div class="muted">{{ psychologist.specialization }}</div>
+  <div class="header-bar">
+    <div class="flex-row flex-row--start">
+      {% if psychologist.photo %}
+      <img src="{{ psychologist.photo.url }}" alt="Фото" class="photo-avatar">
+      {% endif %}
+      <div>
+        <div class="muted">Вы вошли как психолог</div>
+        <div><strong>{{ psychologist.last_name }} {{ psychologist.first_name }}</strong></div>
+        <div class="muted">{{ psychologist.specialization }}</div>
+      </div>
     </div>
-    <div style="display:flex; gap:10px; align-items:center; flex-wrap: wrap;">
+    <div class="flex-row flex-row--gap-md">
       <a class="btn" href="{% url 'academy:psych_dashboard' %}">Мои курсы</a>
+      <a class="btn" href="{% url 'academy:psych_profile' %}">Мой профиль</a>
       <a class="btn" href="{% url 'academy:psych_logout' %}">Выйти</a>
     </div>
   </div>
@@ -17,4 +23,6 @@
 
 {% block psych_content %}{% endblock %}
 {% endblock %}
-
+{% block extra_scripts %}
+{% block psych_extra_scripts %}{% endblock %}
+{% endblock %}

@@ -1,7 +1,24 @@
 from django import forms
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 
-from .models import Course, Lesson, LessonContent, TestOption, TestQuestion
+from .models import Course, Lesson, LessonContent, Psychologist, TestOption, TestQuestion
+
+
+class PsychologistProfileForm(forms.ModelForm):
+    class Meta:
+        model = Psychologist
+        fields = ("first_name", "last_name", "photo", "specialization", "bio")
+        labels = {
+            "first_name": "Имя",
+            "last_name": "Фамилия",
+            "photo": "Фото",
+            "specialization": "Специализация",
+            "bio": "О себе",
+        }
+        widgets = {
+            "bio": forms.Textarea(attrs={"rows": 5}),
+            "photo": forms.FileInput(attrs={"accept": "image/*"}),
+        }
 
 
 class CourseForm(forms.ModelForm):
@@ -11,9 +28,24 @@ class CourseForm(forms.ModelForm):
         labels = {
             "title": "Название курса",
             "short_description": "Короткое описание",
-            "is_published": "Опубликован",
+            "is_published": "Опубликован (доступен всем)",
             "is_private": "Закрытый (только по ссылке)",
         }
+        help_texts = {
+            "is_published": "Нельзя включить вместе с «Закрытый».",
+            "is_private": "Нельзя включить вместе с «Опубликован».",
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        is_published = cleaned.get("is_published")
+        is_private = cleaned.get("is_private")
+        if is_published and is_private:
+            raise forms.ValidationError(
+                "Курс не может быть одновременно опубликованным и закрытым по ссылке. "
+                "Выберите один вариант доступа."
+            )
+        return cleaned
 
 
 class LessonForm(forms.ModelForm):

@@ -2,16 +2,16 @@
 {% block title %}{% if mode == "create" %}Новый материал{% else %}Редактирование материала{% endif %}{% endblock %}
 {% block psych_content %}
 <div class="card">
-  <h2 style="margin-top:0;">
+  <h2 class="heading-reset">
     {% if mode == "create" %}Новый материал{% else %}Редактирование материала{% endif %}
   </h2>
   <div class="muted">
     Курс: <a href="{% url 'academy:psych_course_edit' course.id %}">{{ course.title }}</a> →
     Урок: <a href="{% url 'academy:psych_lesson_edit' lesson.id %}">{{ lesson.title }}</a>
   </div>
-  <form method="post" enctype="multipart/form-data" style="margin-top:12px;">
+  <form method="post" enctype="multipart/form-data" class="form-mt-md">
     {% csrf_token %}
-    <div style="display:grid; gap:12px;">
+    <div class="stack">
       {{ form.non_field_errors }}
       <label>
         <div class="muted">{{ form.content_type.label }}</div>
@@ -43,10 +43,10 @@
         {{ form.video_file }}
         {{ form.video_file.errors }}
         {% if mode == "edit" and form.instance.video_file %}
-          <div class="muted" style="margin-top:6px;">
+          <div class="muted mt-sm">
             Текущий файл: <a href="{{ form.instance.video_file.url }}" target="_blank">открыть</a>
           </div>
-          <button class="btn" type="submit" formaction="{% url 'academy:psych_content_remove_video_file' form.instance.id %}" formmethod="post" style="background:#8b1e1e; margin-top:6px;">Удалить текущий видеофайл</button>
+          <button class="btn btn--danger btn--spaced-top" type="submit" formaction="{% url 'academy:psych_content_remove_video_file' form.instance.id %}" formmethod="post">Удалить текущий видеофайл</button>
         {% endif %}
       </label>
       <label>
@@ -54,18 +54,18 @@
         {{ form.video_preview }}
         {{ form.video_preview.errors }}
         {% if mode == "edit" and form.instance.video_preview %}
-          <div class="muted" style="margin-top:6px;">
+          <div class="muted mt-sm">
             Текущее превью: <a href="{{ form.instance.video_preview.url }}" target="_blank">открыть</a>
           </div>
-          <button class="btn" type="submit" formaction="{% url 'academy:psych_content_remove_video_preview' form.instance.id %}" formmethod="post" style="background:#8b1e1e; margin-top:6px;">Удалить текущее превью</button>
+          <button class="btn btn--danger btn--spaced-top" type="submit" formaction="{% url 'academy:psych_content_remove_video_preview' form.instance.id %}" formmethod="post">Удалить текущее превью</button>
         {% endif %}
       </label>
       <button class="btn" type="submit">Сохранить материал</button>
       {% if mode == "edit" and form.instance.content_type == "test" %}
-        <a class="btn" href="{% url 'academy:psych_test_editor' form.instance.id %}" style="margin-top:6px;">Настроить вопросы теста</a>
+        <a class="btn btn--spaced-top" href="{% url 'academy:psych_test_editor' form.instance.id %}">Настроить вопросы теста</a>
       {% endif %}
       {% if mode == "edit" and form.instance.content_type == "game" %}
-        <a class="btn" href="{% url 'academy:psych_game_editor' form.instance.id %}" style="margin-top:6px;">Открыть редактор игры</a>
+        <a class="btn btn--spaced-top" href="{% url 'academy:psych_game_editor' form.instance.id %}">Открыть редактор игры</a>
       {% endif %}
     </div>
   </form>
@@ -83,14 +83,13 @@
       const selected = typeField?.value;
       const isArticle = selected === "article";
       const isVideo = selected === "video";
-      if (articleWrapper) articleWrapper.style.display = isArticle ? "block" : "none";
-      if (videoUrlField) videoUrlField.style.display = isVideo ? "block" : "none";
-      if (videoFileField) videoFileField.style.display = isVideo ? "block" : "none";
-      if (videoPreviewField) videoPreviewField.style.display = isVideo ? "block" : "none";
+      if (articleWrapper) articleWrapper.classList.toggle("is-hidden", !isArticle);
+      if (videoUrlField) videoUrlField.classList.toggle("is-hidden", !isVideo);
+      if (videoFileField) videoFileField.classList.toggle("is-hidden", !isVideo);
+      if (videoPreviewField) videoPreviewField.classList.toggle("is-hidden", !isVideo);
     };
     typeField?.addEventListener("change", toggleBlocks);
     toggleBlocks();
   })();
 </script>
 {% endblock %}
-

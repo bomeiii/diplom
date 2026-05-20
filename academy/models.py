@@ -25,7 +25,7 @@ class Psychologist(models.Model):
     )
     first_name = models.CharField(max_length=120)
     last_name = models.CharField(max_length=120)
-    photo_url = models.URLField(blank=True)
+    photo = models.ImageField(upload_to="psychologists/", blank=True)
     specialization = models.CharField(max_length=255, default="Психолог")
     bio = models.TextField(blank=True)
 
@@ -56,6 +56,16 @@ class Course(models.Model):
     is_private = models.BooleanField(default=False)
     private_access_token = models.CharField(max_length=32, default=generate_private_access_token, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def normalize_access_flags(self) -> None:
+        if self.is_private:
+            self.is_published = False
+        elif self.is_published:
+            self.is_private = False
+
+    def save(self, *args, **kwargs):
+        self.normalize_access_flags()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title

@@ -5,16 +5,17 @@
 
 <div class="grid">
     {% for psychologist in psychologists %}
-    <div class="card">
-        {% if psychologist.photo_url %}
-        <img src="{{ psychologist.photo_url }}" alt="Фото"
-            style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;">
+    <a class="tile-link tile-link--psychologist" href="{% url 'academy:psychologist_dashboard' psychologist.id %}">
+        {% if psychologist.photo %}
+        <img src="{{ psychologist.photo.url }}" alt="Фото" class="photo-card photo-card--home">
         {% endif %}
-        <h3>{{ psychologist.last_name }} {{ psychologist.first_name }}</h3>
-        <p><span class="badge">{{ psychologist.specialization }}</span></p>
+        <div class="tile-link__title">{{ psychologist.last_name }} {{ psychologist.first_name }}</div>
+        <div class="tile-link__meta">
+            <span class="badge">{{ psychologist.specialization }}</span>
+        </div>
         <p class="muted">{{ psychologist.bio|default:"Описание пока не заполнено." }}</p>
-        <a class="btn" href="{% url 'academy:psychologist_dashboard' psychologist.id %}">Открыть профиль</a>
-    </div>
+        <span class="btn">Открыть профиль</span>
+    </a>
     {% empty %}
     <p>Психологи пока не добавлены.</p>
     {% endfor %}

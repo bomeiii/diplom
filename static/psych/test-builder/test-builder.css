@@ -23,7 +23,7 @@
 .tb-options-list {
   display: grid;
   gap: 6px;
-  margin-top: 6px;
+  margin: 6px 0 6px 0;
 }
 
 .tb-option-row {

@@ -1,26 +1,25 @@
 {% extends "twa_base.html" %}
+{% load static %}
 {% block title %}{{ lesson.title }}{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
-<style>
-  .video-thumb { position: relative; display: inline-block; border-radius: 10px; overflow: hidden; max-width: 560px; width: 100%; background: #eef2ff; }
-  .video-thumb img { width: 100%; display: block; }
-  .video-thumb .video-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 42px; color: #fff; background: rgba(0, 0, 0, 0.25); }
-  .video-fallback { border: 1px dashed #bbc6e6; border-radius: 10px; padding: 22px; background: #f7f9ff; display: inline-block; }
-</style>
+<link rel="stylesheet" href="{% static 'css/lesson.css' %}">
 {% endblock %}
 {% block content %}
 <div class="card">
-    <h2>{{ lesson.title }}</h2>
-    <p>Курс: <a href="{% url 'academy:course_detail' lesson.course.id %}{% if access_token %}?access={{ access_token }}{% endif %}">{{ lesson.course.title }}</a></p>
+    <div class="lesson-header">
+        <h2 class="heading-reset">{{ lesson.title }}</h2>
+        <p class="lesson-header__course muted">Курс: {{ lesson.course.title }}</p>
+        <a class="btn" href="{% url 'academy:course_detail' lesson.course.id %}{% if access_token %}?access={{ access_token }}{% endif %}">К курсу</a>
+    </div>
 </div>
 
 {% for content in contents %}
-    <div class="card">
-        <h3>{{ content.title }}</h3>
+    <div class="card card--content">
+        <h3 class="heading-reset">{{ content.title }}</h3>
 
         {% if content.content_type == "article" %}
-            <div>{{ content.article_body|safe }}</div>
+            <div class="article-body">{{ content.article_body|safe }}</div>
         {% elif content.content_type == "video" %}
             {% with preview=content.get_video_preview_url %}
               {% if content.video_url %}
@@ -53,8 +52,8 @@
                   {% endif %}
                   <span class="video-play">▶</span>
                 </a>
-                <div id="video-inline-{{ content.id }}" style="display:none; max-width:980px;">
-                  <video controls style="width:min(90vw,960px); max-height:80vh;">
+                <div id="video-inline-{{ content.id }}" class="video-inline is-hidden">
+                  <video controls class="video-inline-player">
                     <source src="{{ content.video_file.url }}">
                     Ваш браузер не поддерживает видео.
                   </video>
@@ -64,22 +63,26 @@
               {% endif %}
             {% endwith %}
         {% elif content.content_type == "test" %}
-            <form method="post" action="{% url 'academy:submit_test' content.id %}">
+            {% if request.GET.test_sent == '1' and request.GET.content_id == content.id|stringformat:"s" %}
+            <div class="notice notice--success" id="test-sent-notice-{{ content.id }}">Тест отправлен</div>
+            {% endif %}
+            <form method="post" action="{% url 'academy:submit_test' content.id %}" class="test-form stack">
                 {% csrf_token %}
                 {% if access_token %}<input type="hidden" name="access" value="{{ access_token }}">{% endif %}
                 {% if lesson_access_token %}<input type="hidden" name="lesson_access" value="{{ lesson_access_token }}">{% endif %}
                 <p class="child-name-field"><label>Имя ребёнка: <input type="text" name="child_name" {% if not telegram_user %}required{% endif %}></label></p>
                 {% for question in content.questions.all %}
+                <div class="test-question">
                     <p><strong>{{ forloop.counter }}. {{ question.question_text }}</strong></p>
                     {% if question.image %}
-                        <p><img src="{{ question.image.url }}" alt="Картинка вопроса" style="max-width:360px; border-radius:8px;"></p>
+                        <p><img src="{{ question.image.url }}" alt="Картинка вопроса" class="test-question-image"></p>
                     {% endif %}
                     {% if question.question_type == "open" %}
-                        <textarea name="q_{{ question.id }}_open" rows="3" style="width:100%;" {% if question.is_required %}required{% endif %}></textarea>
+                        <textarea name="q_{{ question.id }}_open" rows="3" {% if question.is_required %}required{% endif %}></textarea>
                     {% else %}
                         {% for option in question.options.all %}
                             {% if not option.is_hidden %}
-                              <label style="display:block;" class="test-option test-option-{{ question.answers_view }}">
+                              <label class="option-label test-option test-option-{{ question.answers_view }}">
                                   <input
                                       type="{% if question.question_type == 'multi' %}checkbox{% else %}radio{% endif %}"
                                       name="q_{{ question.id }}"
@@ -91,17 +94,23 @@
                             {% endif %}
                         {% endfor %}
                     {% endif %}
+                </div>
                 {% endfor %}
-                <button class="btn" type="submit">Сохранить тест и анализ</button>
+                <button class="btn" type="submit">Сохранить</button>
             </form>
         {% elif content.content_type == "game" %}
+            {% if request.GET.game_sent == '1' and request.GET.content_id == content.id|stringformat:"s" %}
+            <div class="notice notice--success">Ответ сохранён</div>
+            {% endif %}
             {% with scenes=content.game_scenes.all %}
               {% if scenes %}
-                <form method="post" action="{% url 'academy:submit_game' content.id %}">
+                <form method="post" action="{% url 'academy:submit_game' content.id %}" class="game-form">
                   {% csrf_token %}
+                  {% if access_token %}<input type="hidden" name="access" value="{{ access_token }}">{% endif %}
+                  {% if lesson_access_token %}<input type="hidden" name="lesson_access" value="{{ lesson_access_token }}">{% endif %}
                   <p class="child-name-field"><label>Имя ребёнка: <input type="text" name="child_name" {% if not telegram_user %}required{% endif %}></label></p>
                   <label>
-                    <div class="muted">Сцена</div>
+                    <div class="muted field-label">Сцена</div>
                     <select name="scene_id" id="scene-select-{{ content.id }}" onchange="window.updateGameScene{{ content.id }}()">
                       {% for s in scenes %}
                         <option value="{{ s.id }}">{{ s.title }}</option>
@@ -110,19 +119,19 @@
                   </label>
 
                   {% for s in scenes %}
-                    <div class="card game-scene-panel-{{ content.id }}" data-scene-id="{{ s.id }}" style="margin-top:10px; {% if not forloop.first %}display:none;{% endif %}">
+                    <div class="card card--flat game-scene-panel game-scene-panel-{{ content.id }}{% if not forloop.first %} is-hidden{% endif %}" data-scene-id="{{ s.id }}">
                       {% if s.background %}
-                        <img src="{{ s.background.image.url }}" alt="Фон" style="width:100%; border-radius:8px; max-height:300px; object-fit:cover;">
+                        <img src="{{ s.background.image.url }}" alt="Фон" class="game-scene-bg">
                       {% endif %}
                       {% for t in s.texts.all %}
                         <p>{{ t.text }}</p>
                       {% endfor %}
                       <p><strong>Ситуация:</strong> {{ s.question_text }}</p>
                       {% if s.answer_mode == "open" %}
-                        <textarea name="game_open_answer" rows="3" style="width:100%;"></textarea>
+                        <textarea name="game_open_answer" rows="3"></textarea>
                       {% else %}
                         {% for op in s.answer_options.all %}
-                          <label style="display:block;">
+                          <label class="option-label">
                             <input type="checkbox" name="game_option" value="{{ op.id }}"> {{ op.option_text }}
                           </label>
                         {% endfor %}
@@ -130,19 +139,19 @@
                     </div>
                   {% endfor %}
 
-                  <button class="btn" type="submit">Сохранить игровой ответ</button>
+                  <button class="btn" type="submit">Сохранить</button>
                 </form>
                 <script>
                   window.updateGameScene{{ content.id }} = function () {
                     const select = document.getElementById("scene-select-{{ content.id }}");
                     const panels = document.querySelectorAll(".game-scene-panel-{{ content.id }}");
                     panels.forEach((panel) => {
-                      panel.style.display = panel.dataset.sceneId === select.value ? "block" : "none";
+                      panel.classList.toggle("is-hidden", panel.dataset.sceneId !== select.value);
                     });
                   };
                 </script>
               {% else %}
-                <p>Игровой сценарий пока не создан.</p>
+                <p class="muted">Игровой сценарий пока не создан.</p>
               {% endif %}
             {% endwith %}
         {% endif %}
@@ -154,6 +163,10 @@
 <script>
   Fancybox.bind("[data-fancybox]", {
     dragToClose: false
+  });
+  document.querySelectorAll("[id^='test-sent-notice-']").forEach((el) => {
+    el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    setTimeout(() => el.classList.add("is-hidden"), 6000);
   });
 </script>
 {% endblock %}

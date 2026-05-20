@@ -1,0 +1,62 @@
+/* Lesson page: video, tests, games */
+.video-thumb {
+  position: relative;
+  display: inline-block;
+  border-radius: var(--radius);
+  overflow: hidden;
+  max-width: 560px;
+  width: 100%;
+  background: var(--color-green-soft);
+  margin-top: var(--space-sm);
+}
+
+.video-thumb img {
+  width: 100%;
+  display: block;
+}
+
+.video-thumb .video-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.video-fallback {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius);
+  padding: 22px;
+  background: var(--color-bg);
+  display: inline-block;
+}
+
+.video-inline {
+  max-width: 980px;
+}
+
+.video-inline-player {
+  width: min(90vw, 960px);
+  max-height: 80vh;
+}
+
+.test-question-image {
+  max-width: 360px;
+  border-radius: var(--radius);
+  margin: var(--space-sm) 0;
+}
+
+.game-scene-panel {
+  margin-top: var(--space-md);
+}
+
+.game-scene-bg {
+  width: 100%;
+  border-radius: var(--radius);
+  max-height: 300px;
+  object-fit: cover;
+  margin-bottom: var(--space-sm);
+}

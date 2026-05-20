@@ -2,8 +2,8 @@
 {% block title %}Мои курсы{% endblock %}
 {% block psych_content %}
 <div class="card">
-  <div style="display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap: wrap;">
-    <h2 style="margin:0;">Мои курсы</h2>
+  <div class="header-bar">
+    <h2 class="heading-reset--h3">Мои курсы</h2>
     <a class="btn" href="{% url 'academy:psych_course_create' %}">+ Добавить курс</a>
   </div>
 </div>
@@ -11,18 +11,18 @@
 <div class="grid">
   {% for course in courses %}
     <div class="card">
-      <div style="display:flex; gap:8px; align-items:baseline; justify-content:space-between;">
+      <div class="flex-row flex-row--between flex-row--baseline">
         <strong>{{ course.title }}</strong>
-        {% if course.is_private %}<span class="badge">закрытый</span>{% else %}<span class="badge">открытый</span>{% endif %}
+        {% if course.is_private %}<span class="badge">закрытый</span>{% elif course.is_published %}<span class="badge">открытый</span>{% else %}<span class="badge">черновик</span>{% endif %}
       </div>
       <p class="muted">{{ course.short_description|default:"Без описания." }}</p>
-      <div style="display:flex; gap:10px; flex-wrap: wrap;">
+      <div class="flex-row flex-row--gap-md">
         <a class="btn" href="{% url 'academy:psych_course_edit' course.id %}">Редактировать</a>
         <a class="btn" href="{% url 'academy:course_detail' course.id %}">Посмотреть как ученик</a>
       </div>
-      <form method="post" action="{% url 'academy:psych_course_delete' course.id %}" style="margin-top:10px;">
+      <form method="post" action="{% url 'academy:psych_course_delete' course.id %}" class="mt-md">
         {% csrf_token %}
-        <button class="btn" type="submit" style="background:#8b1e1e;">Удалить курс</button>
+        <button class="btn btn--danger" type="submit">Удалить курс</button>
       </form>
     </div>
   {% empty %}
@@ -32,4 +32,3 @@
   {% endfor %}
 </div>
 {% endblock %}
-

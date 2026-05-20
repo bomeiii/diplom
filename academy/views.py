@@ -9,9 +9,10 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
 from django.urls import reverse
+from urllib.parse import urlencode
 
 from .child_utils import resolve_child_profile
-from .forms import CourseForm, LessonContentForm, LessonForm, TestOptionForm, TestQuestionForm
+from .forms import CourseForm, LessonContentForm, LessonForm, PsychologistProfileForm, TestOptionForm, TestQuestionForm
 from .telegram_auth import extract_init_data, parse_telegram_user, validate_init_data
 from .models import (
     AvatarPartAsset,
@@ -79,7 +80,7 @@ def psychologist_dashboard(request: HttpRequest, psychologist_id: int) -> HttpRe
     psychologist = get_object_or_404(Psychologist, pk=psychologist_id)
     courses = psychologist.courses.all()
     if not _is_psychologist_owner(request, psychologist_id):
-        courses = courses.filter(is_published=True)
+        courses = courses.filter(is_published=True, is_private=False)
     courses = courses.order_by("title")
     context = {
         "psychologist": psychologist,
@@ -102,9 +103,11 @@ def _has_private_course_access(request: HttpRequest, course: Course) -> bool:
 
 
 def _can_view_course(request: HttpRequest, course: Course) -> bool:
-    if course.is_published or _is_psychologist_owner(request, course.psychologist_id):
+    if _is_psychologist_owner(request, course.psychologist_id):
         return True
-    return course.is_private and _has_private_course_access(request, course)
+    if course.is_private:
+        return _has_private_course_access(request, course)
+    return course.is_published
 
 
 def _has_private_lesson_access(request: HttpRequest, lesson: Lesson) -> bool:
@@ -112,6 +115,24 @@ def _has_private_lesson_access(request: HttpRequest, lesson: Lesson) -> bool:
         return True
     access_token = (request.GET.get("lesson_access") or request.POST.get("lesson_access") or "").strip()
     return bool(access_token and access_token == lesson.private_access_token)
+
+
+def _lesson_submit_redirect(
+    request: HttpRequest,
+    lesson: Lesson,
+    content_id: int,
+    sent_param: str,
+) -> HttpResponse:
+    course = lesson.course
+    params = {sent_param: "1", "content_id": str(content_id)}
+    access_token = (request.POST.get("access") or "").strip()
+    lesson_access_token = (request.POST.get("lesson_access") or "").strip()
+    if access_token and access_token == course.private_access_token:
+        params["access"] = access_token
+    if lesson_access_token and lesson_access_token == lesson.private_access_token:
+        params["lesson_access"] = lesson_access_token
+    url = reverse("academy:lesson_detail", kwargs={"lesson_id": lesson.id})
+    return redirect(f"{url}?{urlencode(params)}")
 
 
 def course_detail(request: HttpRequest, course_id: int) -> HttpResponse:
@@ -229,16 +250,7 @@ def submit_test(request: HttpRequest, content_id: int) -> HttpResponse:
         selected_answers=selected_answers,
         ai_summary=ai_summary,
     )
-    access_token = (request.POST.get("access") or "").strip()
-    lesson_access_token = (request.POST.get("lesson_access") or "").strip()
-    query_parts = []
-    if access_token and access_token == course.private_access_token:
-        query_parts.append(f"access={access_token}")
-    if lesson_access_token and lesson_access_token == content.lesson.private_access_token:
-        query_parts.append(f"lesson_access={lesson_access_token}")
-    if query_parts:
-        return redirect(f"{reverse('academy:course_detail', kwargs={'course_id': course.id})}?{'&'.join(query_parts)}")
-    return redirect("academy:course_detail", course_id=course.id)
+    return _lesson_submit_redirect(request, content.lesson, content.id, "test_sent")
 
 
 @require_http_methods(["POST"])
@@ -304,7 +316,7 @@ def submit_game(request: HttpRequest, content_id: int) -> HttpResponse:
         selected_answers=selected_payload,
         ai_summary=ai_summary,
     )
-    return redirect("academy:course_detail", course_id=course.id)
+    return _lesson_submit_redirect(request, content.lesson, content.id, "game_sent")
 
 
 def analytics_overview(request: HttpRequest) -> HttpResponse:
@@ -350,6 +362,46 @@ def _get_current_psychologist(request: HttpRequest) -> Psychologist:
     if psychologist is None:
         raise Psychologist.DoesNotExist
     return psychologist
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def psych_profile(request: HttpRequest) -> HttpResponse:
+    try:
+        psychologist = _get_current_psychologist(request)
+    except Psychologist.DoesNotExist:
+        logout(request)
+        return redirect("academy:psych_login")
+
+    old_photo = psychologist.photo if psychologist.photo else None
+    form = PsychologistProfileForm(request.POST or None, request.FILES or None, instance=psychologist)
+    if request.method == "POST" and form.is_valid():
+        updated = form.save(commit=False)
+        if old_photo and updated.photo and old_photo.name != updated.photo.name:
+            old_photo.delete(save=False)
+        updated.save()
+        return redirect("academy:psych_profile")
+
+    return render(
+        request,
+        "psych/profile_form.html",
+        {"psychologist": psychologist, "form": form},
+    )
+
+
+@login_required
+@require_http_methods(["POST"])
+def psych_profile_remove_photo(request: HttpRequest) -> HttpResponse:
+    try:
+        psychologist = _get_current_psychologist(request)
+    except Psychologist.DoesNotExist:
+        logout(request)
+        return redirect("academy:psych_login")
+    if psychologist.photo:
+        psychologist.photo.delete(save=False)
+        psychologist.photo = None
+        psychologist.save(update_fields=["photo"])
+    return redirect("academy:psych_profile")
 
 
 @login_required
@@ -482,6 +534,10 @@ def _get_psych_game_content_or_404(psychologist: Psychologist, content_id: int) 
     return get_object_or_404(LessonContent, pk=content_id, lesson__course__psychologist=psychologist, content_type=LessonContent.GAME)
 
 
+def _redirect_psych_lesson_materials(lesson_id: int) -> HttpResponse:
+    return redirect("academy:psych_lesson_edit", lesson_id=lesson_id)
+
+
 @login_required
 def psych_test_editor(request: HttpRequest, content_id: int) -> HttpResponse:
     try:
@@ -599,7 +655,7 @@ def psych_test_builder_save(request: HttpRequest, content_id: int) -> HttpRespon
     # удалить вопросы, которых нет в payload
     content.questions.exclude(pk__in=seen_question_ids).delete()
 
-    return redirect("academy:psych_test_editor", content_id=content.id)
+    return _redirect_psych_lesson_materials(content.lesson_id)
 
 
 @login_required
@@ -713,7 +769,7 @@ def psych_game_scene_save(request: HttpRequest, content_id: int) -> HttpResponse
             order=idx,
         )
 
-    return redirect("academy:psych_game_editor", content_id=content.id)
+    return _redirect_psych_lesson_materials(content.lesson_id)
 
 
 @login_required
@@ -785,7 +841,7 @@ def psych_test_question_create(request: HttpRequest, content_id: int) -> HttpRes
         question.content = content
         question.save()
         _save_inline_options(question, request)
-        return redirect("academy:psych_test_editor", content_id=content.id)
+        return _redirect_psych_lesson_materials(content.lesson_id)
     return render(
         request,
         "psych/test_question_form.html",
@@ -816,7 +872,7 @@ def psych_test_question_edit(request: HttpRequest, question_id: int) -> HttpResp
             old_image.delete(save=False)
         updated.save()
         _save_inline_options(updated, request)
-        return redirect("academy:psych_test_editor", content_id=question.content_id)
+        return _redirect_psych_lesson_materials(question.content.lesson_id)
     options_data = list(question.options.values("id", "option_text", "is_correct", "score"))
     return render(
         request,
@@ -867,9 +923,9 @@ def psych_test_question_delete(request: HttpRequest, question_id: int) -> HttpRe
         logout(request)
         return redirect("academy:psych_login")
     question = get_object_or_404(TestQuestion, pk=question_id, content__lesson__course__psychologist=psychologist)
-    content_id = question.content_id
+    lesson_id = question.content.lesson_id
     question.delete()
-    return redirect("academy:psych_test_editor", content_id=content_id)
+    return _redirect_psych_lesson_materials(lesson_id)
 
 
 @login_required
@@ -902,7 +958,7 @@ def psych_test_option_create(request: HttpRequest, question_id: int) -> HttpResp
         option = form.save(commit=False)
         option.question = question
         option.save()
-        return redirect("academy:psych_test_editor", content_id=question.content_id)
+        return _redirect_psych_lesson_materials(question.content.lesson_id)
     return render(request, "psych/test_option_form.html", {"psychologist": psychologist, "question": question, "form": form, "mode": "create"})
 
 
@@ -918,7 +974,7 @@ def psych_test_option_edit(request: HttpRequest, option_id: int) -> HttpResponse
     form = TestOptionForm(request.POST or None, instance=option)
     if request.method == "POST" and form.is_valid():
         form.save()
-        return redirect("academy:psych_test_editor", content_id=option.question.content_id)
+        return _redirect_psych_lesson_materials(option.question.content.lesson_id)
     return render(request, "psych/test_option_form.html", {"psychologist": psychologist, "question": option.question, "form": form, "mode": "edit"})
 
 
@@ -931,9 +987,9 @@ def psych_test_option_delete(request: HttpRequest, option_id: int) -> HttpRespon
         logout(request)
         return redirect("academy:psych_login")
     option = get_object_or_404(TestOption, pk=option_id, question__content__lesson__course__psychologist=psychologist)
-    content_id = option.question.content_id
+    lesson_id = option.question.content.lesson_id
     option.delete()
-    return redirect("academy:psych_test_editor", content_id=content_id)
+    return _redirect_psych_lesson_materials(lesson_id)
 
 
 @login_required
@@ -992,9 +1048,7 @@ def psych_content_create(request: HttpRequest) -> HttpResponse:
         content = form.save(commit=False)
         content.lesson = lesson
         content.save()
-        if content.content_type == LessonContent.TEST:
-            return redirect("academy:psych_test_editor", content_id=content.id)
-        return redirect("academy:psych_lesson_edit", lesson_id=lesson.id)
+        return _redirect_psych_lesson_materials(lesson.id)
     return render(
         request,
         "psych/content_form.html",

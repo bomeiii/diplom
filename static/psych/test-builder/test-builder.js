@@ -37,8 +37,7 @@
       const right = document.createElement("div");
       const delBtn = document.createElement("button");
       delBtn.type = "button";
-      delBtn.className = "btn";
-      delBtn.style.background = "#8b1e1e";
+      delBtn.className = "btn btn--danger";
       delBtn.textContent = "Удалить";
       delBtn.onclick = () => {
         data.splice(index, 1);
@@ -67,8 +66,7 @@
       main.appendChild(helpInput);
 
       const toggles = document.createElement("div");
-      toggles.style.display = "flex";
-      toggles.style.gap = "12px";
+      toggles.className = "flex-row flex-row--gap-md";
       const requiredLabel = document.createElement("label");
       const required = document.createElement("input");
       required.type = "checkbox";
@@ -94,8 +92,7 @@
         title.textContent = "Варианты ответа";
         optBlock.appendChild(title);
         const hint = document.createElement("div");
-        hint.className = "muted";
-        hint.style.marginTop = "4px";
+        hint.className = "muted mt-xs";
         hint.textContent = "Отметьте правильные варианты. Баллы — вес правильных вариантов (учитываются только если ответ выбран правильно).";
         optBlock.appendChild(hint);
         const list = document.createElement("div");
@@ -129,8 +126,7 @@
           score.title = "Баллы за правильный вариант";
           const del = document.createElement("button");
           del.type = "button";
-          del.className = "btn";
-          del.style.background = "#8b1e1e";
+          del.className = "btn btn--danger btn--sm";
           del.textContent = "×";
           del.onclick = () => {
             q.options.splice(oIndex, 1);
