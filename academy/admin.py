@@ -42,9 +42,6 @@ class PsychologistAdminForm(forms.ModelForm):
 
 @admin.register(Psychologist)
 class PsychologistAdmin(admin.ModelAdmin):
-    class Media:
-        css = ("css/base.css",)
-
     form = PsychologistAdminForm
     list_display = ("last_name", "first_name", "specialization", "get_username")
     search_fields = ("last_name", "first_name", "specialization")
@@ -71,7 +68,7 @@ class PsychologistAdmin(admin.ModelAdmin):
         if not obj.photo:
             return "—"
         return format_html(
-            '<img src="{}" alt="Фото" class="admin-photo-preview">',
+            '<img src="{}" alt="Фото" style="max-height:120px;border-radius:8px;">',
             obj.photo.url,
         )
 
