@@ -24,6 +24,7 @@ from .models import (
     GameScene,
     GameSceneObject,
     GameTextElement,
+    HomeSlide,
     Lesson,
     LessonContent,
     Psychologist,
@@ -42,7 +43,8 @@ def _delete_lesson_content_files(content: LessonContent) -> None:
 
 def home(request: HttpRequest) -> HttpResponse:
     psychologists = Psychologist.objects.all().order_by("last_name", "first_name")
-    context = {"psychologists": psychologists}
+    slides = HomeSlide.objects.filter(is_active=True)
+    context = {"psychologists": psychologists, "slides": slides}
     return render(request, "academy/home.html", context)
 
 

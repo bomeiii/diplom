@@ -6,9 +6,9 @@ body {
 }
 
 header {
-  background: var(--tg-theme-button-color, var(--color-green));
-  color: var(--tg-theme-button-text-color, #fff);
-  padding: calc(12px + env(safe-area-inset-top, 0px)) var(--space-md) 12px;
+  background: var(--tg-theme-button-color, var(--color-brown));
+  color: var(--tg-theme-button-text-color, var(--color-cream));
+  padding: calc(12px + env(safe-area-inset-top, 0px)) var(--page-gutter) 12px;
 }
 
 main {

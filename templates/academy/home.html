@@ -1,23 +1,73 @@
 {% extends "base.html" %}
-{% block title %}Добро пожаловать{% endblock %}
+{% load static %}
+{% block title %}Главная{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock %}
+{% block main_class %}main--flush{% endblock %}
 {% block content %}
-<h1>Добро пожаловать</h1>
-
-<div class="grid">
-    {% for psychologist in psychologists %}
-    <a class="tile-link tile-link--psychologist" href="{% url 'academy:psychologist_dashboard' psychologist.id %}">
-        {% if psychologist.photo %}
-        <img src="{{ psychologist.photo.url }}" alt="Фото" class="photo-card photo-card--home">
-        {% endif %}
-        <div class="tile-link__title">{{ psychologist.last_name }} {{ psychologist.first_name }}</div>
-        <div class="tile-link__meta">
-            <span class="badge">{{ psychologist.specialization }}</span>
+<section class="hero-slider{% if not slides %} hero-slider--empty{% endif %}" data-hero-slider aria-label="Слайдер на главной">
+    <div class="hero-slider__shell page-shell">
+        <div class="hero-slider__track">
+            {% for slide in slides %}
+            <article class="hero-slide{% if not slide.image %} hero-slide--no-image{% endif %}{% if forloop.first %} is-active{% endif %}" data-hero-slide aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}">
+                {% if slide.image %}
+                <div class="hero-slide__media" style="background-image: url('{{ slide.image.url }}');" role="img" aria-label="{{ slide.title }}"></div>
+                {% endif %}
+                <div class="hero-slide__overlay" aria-hidden="true"></div>
+                <div class="hero-slide__inner">
+                    <h1 class="hero-slide__title">{{ slide.title }}</h1>
+                    {% if slide.text %}
+                    <p class="hero-slide__text">{{ slide.text }}</p>
+                    {% endif %}
+                </div>
+            </article>
+            {% empty %}
+            <article class="hero-slide hero-slide--no-image is-active" data-hero-slide>
+                <div class="hero-slide__overlay" aria-hidden="true"></div>
+                <div class="hero-slide__inner">
+                    <h1 class="hero-slide__title">Платформа психологических курсов</h1>
+                    <p class="hero-slide__text">Добавьте слайды в разделе администрирования, чтобы настроить главную страницу.</p>
+                </div>
+            </article>
+            {% endfor %}
         </div>
-        <p class="muted">{{ psychologist.bio|default:"Описание пока не заполнено." }}</p>
-        <span class="btn">Открыть профиль</span>
-    </a>
-    {% empty %}
-    <p>Психологи пока не добавлены.</p>
-    {% endfor %}
-</div>
+        {% if slides|length > 1 %}
+        <div class="hero-slider__controls">
+            <button type="button" class="hero-slider__arrow" data-hero-prev aria-label="Предыдущий слайд">‹</button>
+            <div class="hero-slider__dots" data-hero-dots></div>
+            <button type="button" class="hero-slider__arrow" data-hero-next aria-label="Следующий слайд">›</button>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="home-psychologists">
+    <div class="page-shell">
+        <h2 class="home-psychologists__title">Наши психологи</h2>
+        <p class="home-psychologists__lead">Выберите специалиста, чтобы посмотреть курсы, материалы и интерактивные задания.</p>
+        <div class="psychologist-grid">
+        {% for psychologist in psychologists %}
+        <a class="tile-link tile-link--psychologist" href="{% url 'academy:psychologist_dashboard' psychologist.id %}">
+            {% if psychologist.photo %}
+            <img src="{{ psychologist.photo.url }}" alt="Фото {{ psychologist.first_name }} {{ psychologist.last_name }}" class="photo-card photo-card--home">
+            {% endif %}
+            <div class="tile-link__title">{{ psychologist.last_name }} {{ psychologist.first_name }}</div>
+            <div class="tile-link__meta">
+                <span class="badge">{{ psychologist.specialization }}</span>
+            </div>
+            <p class="muted">{{ psychologist.bio|default:"Описание пока не заполнено." }}</p>
+            <span class="btn">Открыть профиль</span>
+        </a>
+        {% empty %}
+        <p class="muted">Психологи пока не добавлены.</p>
+        {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+{% block extra_scripts %}
+{% if slides|length > 1 %}
+<script src="{% static 'js/home-slider.js' %}" defer></script>
+{% endif %}
 {% endblock %}

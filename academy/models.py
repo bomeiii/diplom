@@ -15,6 +15,27 @@ def generate_test_identifier() -> str:
     return uuid.uuid4().hex
 
 
+class HomeSlide(models.Model):
+    title = models.CharField(max_length=200, verbose_name="Заголовок")
+    text = models.TextField(blank=True, verbose_name="Текст на слайде")
+    image = models.ImageField(
+        upload_to="home_slides/",
+        blank=True,
+        null=True,
+        verbose_name="Фоновое изображение",
+    )
+    order = models.PositiveIntegerField(default=1, verbose_name="Порядок")
+    is_active = models.BooleanField(default=True, verbose_name="Показывать")
+
+    class Meta:
+        ordering = ["order", "id"]
+        verbose_name = "Слайд главной страницы"
+        verbose_name_plural = "Слайды главной страницы"
+
+    def __str__(self):
+        return self.title
+
+
 class Psychologist(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,

@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.utils.html import format_html
 
-from .models import Psychologist
+from .models import HomeSlide, Psychologist
 
 
 User = get_user_model()
@@ -102,3 +102,30 @@ class PsychologistAdmin(admin.ModelAdmin):
             obj.user = None
 
         super().save_model(request, obj, form, change)
+
+
+@admin.register(HomeSlide)
+class HomeSlideAdmin(admin.ModelAdmin):
+    list_display = ("title", "order", "is_active", "has_image")
+    list_editable = ("order", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("title", "text")
+    ordering = ("order", "id")
+    readonly_fields = ("image_preview",)
+    fields = ("title", "text", "image", "image_preview", "order", "is_active")
+
+    def has_image(self, obj: HomeSlide) -> bool:
+        return bool(obj.image)
+
+    has_image.boolean = True
+    has_image.short_description = "Фото"
+
+    def image_preview(self, obj: HomeSlide) -> str:
+        if not obj.image:
+            return "—"
+        return format_html(
+            '<img src="{}" alt="Превью" style="max-height:120px;border-radius:8px;">',
+            obj.image.url,
+        )
+
+    image_preview.short_description = "Превью изображения"
