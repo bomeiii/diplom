@@ -110,7 +110,9 @@ STORAGES = {
 }
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+_media_root_default = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH") or str(BASE_DIR / "media")
+MEDIA_ROOT = Path(os.environ.get("DJANGO_MEDIA_ROOT", _media_root_default))
+SERVE_MEDIA = os.environ.get("DJANGO_SERVE_MEDIA", "true").lower() in ("1", "true", "yes", "on")
 
 CKEDITOR_UPLOAD_PATH = "uploads/"
 CKEDITOR_CONFIGS = {

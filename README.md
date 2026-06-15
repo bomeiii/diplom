@@ -63,6 +63,17 @@ X-Forwarded-Proto: https
 
 Медиафайлы (`media/`) смонтированы в volume `media_data`; для продакшена их также можно отдавать через nginx.
 
+### Деплой на Railway
+
+1. В сервисе добавьте **Volume** с mount path `/app/media` — иначе загруженные фото пропадут после перезапуска контейнера.
+2. Переменные окружения: `DEBUG=false`, `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS`, `DATABASE_URL` (PostgreSQL).
+3. Медиа отдаются самим Django (`DJANGO_SERVE_MEDIA=true` по умолчанию). Для больших нагрузок позже можно подключить S3/R2.
+
+| Переменная | По умолчанию | Назначение |
+|------------|--------------|------------|
+| `DJANGO_MEDIA_ROOT` | `/app/media` | Папка загрузок (должна совпадать с volume) |
+| `DJANGO_SERVE_MEDIA` | `true` | Раздавать `/media/` в production |
+
 ### Локальная проверка Mini App
 
 Полноценный тест возможен только по HTTPS. Варианты:

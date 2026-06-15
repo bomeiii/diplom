@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+MEDIA_DIR="${DJANGO_MEDIA_ROOT:-${RAILWAY_VOLUME_MOUNT_PATH:-/app/media}}"
+mkdir -p "$MEDIA_DIR"
+
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 
