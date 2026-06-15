@@ -375,13 +375,12 @@ def psych_profile(request: HttpRequest) -> HttpResponse:
         logout(request)
         return redirect("academy:psych_login")
 
-    old_photo = psychologist.photo if psychologist.photo else None
+    old_photo_name = psychologist.photo.name if psychologist.photo else ""
     form = PsychologistProfileForm(request.POST or None, request.FILES or None, instance=psychologist)
     if request.method == "POST" and form.is_valid():
-        updated = form.save(commit=False)
-        if old_photo and updated.photo and old_photo.name != updated.photo.name:
-            old_photo.delete(save=False)
-        updated.save()
+        updated = form.save()
+        if old_photo_name and updated.photo and updated.photo.name != old_photo_name:
+            updated.photo.storage.delete(old_photo_name)
         return redirect("academy:psych_profile")
 
     return render(
