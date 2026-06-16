@@ -38,6 +38,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    'cloudinary',
+    'cloudinary_storage',   # ← важно: после django.contrib.staticfiles
+    'ckeditor',
     "ckeditor",
     "ckeditor_uploader",
     "academy",
@@ -114,17 +117,23 @@ STORAGES = {
 
 
 
-MEDIA_URL = '/media/'
+MEDIA_URL = "/media/"
 
-# Cloudinary
-cloudinary.config(
-    cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME'),
-    api_key    = os.getenv('CLOUDINARY_API_KEY'),
-    api_secret = os.getenv('CLOUDINARY_API_SECRET'),
-    secure = True,
-)
+# ==================== Cloudinary (Production + Local) ====================
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
+}
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+if os.getenv('CLOUDINARY_CLOUD_NAME'):
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    # Для ckeditor тоже
+    CKEDITOR_UPLOAD_PATH = "uploads/"
+    CKEDITOR_STORAGE_BACKEND = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+else:
+    # Локально
+    MEDIA_ROOT = BASE_DIR / "media"
 
 CKEDITOR_UPLOAD_PATH = "uploads/"
 CKEDITOR_CONFIGS = {
