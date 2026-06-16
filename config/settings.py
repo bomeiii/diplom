@@ -5,9 +5,6 @@ Django settings for config project.
 import os
 from pathlib import Path
 import dj_database_url
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
 
 from dotenv import load_dotenv
 
@@ -38,10 +35,15 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'cloudinary',
-    'cloudinary_storage',   # ← важно: после django.contrib.staticfiles
-    'ckeditor',
+
+    # Cloudinary
+    "cloudinary",
+    "cloudinary_storage",
+
+    # CKEditor
+    "ckeditor",
     "ckeditor_uploader",
+
     "academy",
 ]
 
@@ -81,7 +83,7 @@ if os.environ.get('DATABASE_URL'):
     DATABASES = {
         'default': dj_database_url.config(
             conn_max_age=600,
-            ssl_require=False  
+            ssl_require=False
         )
     }
 else:
@@ -104,21 +106,20 @@ TIME_ZONE = "Europe/Moscow"
 USE_I18N = True
 USE_TZ = True
 
+# ====================== STATIC ======================
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
 STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 
-
-
+# ====================== MEDIA + CLOUDINARY ======================
 MEDIA_URL = "/media/"
 
-# ==================== Cloudinary (Production + Local) ====================
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
     'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
@@ -127,13 +128,13 @@ CLOUDINARY_STORAGE = {
 
 if os.getenv('CLOUDINARY_CLOUD_NAME'):
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    # Для ckeditor тоже
-    CKEDITOR_UPLOAD_PATH = "uploads/"
     CKEDITOR_STORAGE_BACKEND = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    print("✅ Cloudinary is ACTIVE")
 else:
-    # Локально
     MEDIA_ROOT = BASE_DIR / "media"
+    print("📁 Using local media storage")
 
+# ====================== CKEDITOR ======================
 CKEDITOR_UPLOAD_PATH = "uploads/"
 CKEDITOR_CONFIGS = {
     "article_editor": {
@@ -150,12 +151,9 @@ CKEDITOR_CONFIGS = {
     }
 }
 
-# --- Telegram Mini App ---
+# ====================== Telegram ======================
 TELEGRAM_MINI_APP_ENABLED = os.environ.get("TELEGRAM_MINI_APP_ENABLED", "true").lower() in (
-    "1",
-    "true",
-    "yes",
-    "on",
+    "1", "true", "yes", "on"
 )
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_BOT_USERNAME = os.environ.get("TELEGRAM_BOT_USERNAME", "")
@@ -165,13 +163,11 @@ TELEGRAM_FRAME_ANCESTORS = os.environ.get(
     "https://web.telegram.org https://*.telegram.org https://telegram.org",
 )
 
-# --- Production / HTTPS ---
+# ====================== Production ======================
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "true").lower() in (
-        "1",
-        "true",
-        "yes",
+        "1", "true", "yes"
     )
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True

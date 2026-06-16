@@ -8,4 +8,3 @@ tzdata; platform_system=="Windows"
 dj-database-url==3.1.2
 psycopg2-binary==2.9.12
 django-cloudinary-storage
-pillow
