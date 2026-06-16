@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'cloudinary',
     'cloudinary_storage',   # ← важно: после django.contrib.staticfiles
     'ckeditor',
-    "ckeditor",
     "ckeditor_uploader",
     "academy",
 ]
