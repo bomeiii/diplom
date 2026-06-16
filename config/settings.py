@@ -109,10 +109,15 @@ STORAGES = {
     },
 }
 
-MEDIA_URL = "/media/"
-_media_root_default = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH") or str(BASE_DIR / "media")
-MEDIA_ROOT = Path(os.environ.get("DJANGO_MEDIA_ROOT", _media_root_default))
-SERVE_MEDIA = os.environ.get("DJANGO_SERVE_MEDIA", "true").lower() in ("1", "true", "yes", "on")
+MMEDIA_URL = "/media/"
+
+# === Railway Volume ===
+if os.getenv("RAILWAY_VOLUME_MOUNT_PATH"):
+    MEDIA_ROOT = Path(os.getenv("RAILWAY_VOLUME_MOUNT_PATH"))
+else:
+    MEDIA_ROOT = BASE_DIR / "media"
+
+print("MEDIA_ROOT =", MEDIA_ROOT)   # ← добавь для отладки, потом можно убрать
 
 CKEDITOR_UPLOAD_PATH = "uploads/"
 CKEDITOR_CONFIGS = {
