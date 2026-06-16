@@ -5,6 +5,9 @@ Django settings for config project.
 import os
 from pathlib import Path
 import dj_database_url
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 from dotenv import load_dotenv
 
@@ -109,15 +112,19 @@ STORAGES = {
     },
 }
 
-MEDIA_URL = "/media/"
 
-# === Railway Volume ===
-if os.getenv("RAILWAY_VOLUME_MOUNT_PATH"):
-    MEDIA_ROOT = Path(os.getenv("RAILWAY_VOLUME_MOUNT_PATH"))
-else:
-    MEDIA_ROOT = BASE_DIR / "media"
 
-print("MEDIA_ROOT =", MEDIA_ROOT)   # оставь пока для отладки
+MEDIA_URL = '/media/'
+
+# Cloudinary
+cloudinary.config(
+    cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME'),
+    api_key    = os.getenv('CLOUDINARY_API_KEY'),
+    api_secret = os.getenv('CLOUDINARY_API_SECRET'),
+    secure = True,
+)
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 CKEDITOR_UPLOAD_PATH = "uploads/"
 CKEDITOR_CONFIGS = {
