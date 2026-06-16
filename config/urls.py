@@ -29,5 +29,5 @@ urlpatterns = [
     path("", include("academy.urls")),
 ]
 
-if settings.DEBUG or settings.SERVE_MEDIA:
+if settings.DEBUG or not os.getenv("RAILWAY_ENVIRONMENT"):
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

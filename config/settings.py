@@ -109,7 +109,7 @@ STORAGES = {
     },
 }
 
-MMEDIA_URL = "/media/"
+MEDIA_URL = "/media/"
 
 # === Railway Volume ===
 if os.getenv("RAILWAY_VOLUME_MOUNT_PATH"):
@@ -117,7 +117,7 @@ if os.getenv("RAILWAY_VOLUME_MOUNT_PATH"):
 else:
     MEDIA_ROOT = BASE_DIR / "media"
 
-print("MEDIA_ROOT =", MEDIA_ROOT)   # ← добавь для отладки, потом можно убрать
+print("MEDIA_ROOT =", MEDIA_ROOT)   # оставь пока для отладки
 
 CKEDITOR_UPLOAD_PATH = "uploads/"
 CKEDITOR_CONFIGS = {
