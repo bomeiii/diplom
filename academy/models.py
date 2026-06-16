@@ -165,13 +165,11 @@ class LessonContent(models.Model):
 
     def get_video_preview_url(self) -> str:
         if self.video_preview:
-            exists_in_storage = False
             try:
-                exists_in_storage = self.video_preview.storage.exists(self.video_preview.name)
-            except Exception:
-                exists_in_storage = False
-            if exists_in_storage:
                 return self.video_preview.url
+            except Exception:
+                pass
+
         if not self.video_url:
             return ""
 
@@ -179,37 +177,29 @@ class LessonContent(models.Model):
         host = parsed.netloc.lower()
         path = parsed.path.strip("/")
 
-        if "youtu.be" in host:
-            video_id = path.split("/")[0]
-            return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg" if video_id else ""
-
-        if "youtube.com" in host:
-            if path == "watch":
-                video_id = parse_qs(parsed.query).get("v", [""])[0]
-                return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg" if video_id else ""
-            if path.startswith("embed/"):
-                video_id = path.split("/")[1] if len(path.split("/")) > 1 else ""
-                return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg" if video_id else ""
+        if "youtu.be" in host or "youtube.com" in host:
+            video_id = ""
+            if "youtu.be" in host:
+                video_id = path.split("/")[0]
+            else:
+                query = parse_qs(parsed.query)
+                video_id = query.get("v", [""])[0] or (path.split("/")[-1] if "embed" in path else "")
+            
+            if video_id:
+                return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
 
         if "rutube.ru" in host:
-            video_id = ""
-            if "/video/" in f"/{path}":
+            try:
                 parts = path.split("/")
-                try:
-                    video_idx = parts.index("video")
+                video_idx = parts.index("video") if "video" in parts else -1
+                if video_idx != -1 and video_idx + 1 < len(parts):
                     video_id = parts[video_idx + 1]
-                except (ValueError, IndexError):
-                    video_id = ""
-            if video_id:
-                try:
-                    with urlopen(f"https://rutube.ru/api/video/{video_id}/", timeout=2) as response:
-                        body = response.read().decode("utf-8")
-                        payload = json.loads(body)
-                        thumb = payload.get("thumbnail_url") or payload.get("preview_url") or ""
-                        if thumb:
-                            return thumb
-                except (URLError, TimeoutError, ValueError, json.JSONDecodeError):
-                    pass
+                    with urlopen(f"https://rutube.ru/api/video/{video_id}/", timeout=3) as response:
+                        data = json.loads(response.read().decode("utf-8"))
+                        return data.get("thumbnail_url") or data.get("preview_url") or ""
+            except Exception:
+                pass
+
         return ""
 
 
