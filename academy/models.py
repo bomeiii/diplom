@@ -3,8 +3,10 @@ from django.db import models
 import uuid
 from urllib.parse import parse_qs, urlparse
 from urllib.request import urlopen
-from urllib.error import URLError
 import json
+import os
+import subprocess
+from django.core.files.base import ContentFile
 
 
 def generate_private_access_token() -> str:
@@ -126,7 +128,12 @@ class LessonContent(models.Model):
     article_body = models.TextField(blank=True)
     video_url = models.URLField(blank=True)
     video_file = models.FileField(upload_to="lesson_videos/", blank=True, null=True)
-    video_preview = models.FileField(upload_to="lesson_video_previews/", blank=True, null=True)
+    video_preview = models.ImageField(
+        upload_to="lesson_video_previews/",
+        blank=True,
+        null=True,
+        verbose_name="Превью видео"
+    )
 
     class Meta:
         ordering = ["order", "id"]
@@ -170,38 +177,77 @@ class LessonContent(models.Model):
             except Exception:
                 pass
 
-        if not self.video_url:
-            return ""
+        if self.video_url and not self.video_file:
+            parsed = urlparse(self.video_url)
+            host = parsed.netloc.lower()
+            path = parsed.path.strip("/")
 
-        parsed = urlparse(self.video_url)
-        host = parsed.netloc.lower()
-        path = parsed.path.strip("/")
+            if "youtu.be" in host or "youtube.com" in host:
+                video_id = ""
+                if "youtu.be" in host:
+                    video_id = path.split("/")[0]
+                else:
+                    query = parse_qs(parsed.query)
+                    video_id = query.get("v", [""])[0] or (path.split("/")[-1] if "embed" in path else "")
+                
+                if video_id:
+                    return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
 
-        if "youtu.be" in host or "youtube.com" in host:
-            video_id = ""
-            if "youtu.be" in host:
-                video_id = path.split("/")[0]
-            else:
-                query = parse_qs(parsed.query)
-                video_id = query.get("v", [""])[0] or (path.split("/")[-1] if "embed" in path else "")
-            
-            if video_id:
-                return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+            if "rutube.ru" in host:
+                try:
+                    parts = path.split("/")
+                    video_idx = parts.index("video") if "video" in parts else -1
+                    if video_idx != -1 and video_idx + 1 < len(parts):
+                        video_id = parts[video_idx + 1]
+                        with urlopen(f"https://rutube.ru/api/video/{video_id}/", timeout=3) as response:
+                            data = json.loads(response.read().decode("utf-8"))
+                            return data.get("thumbnail_url") or data.get("preview_url") or ""
+                except Exception:
+                    pass
 
-        if "rutube.ru" in host:
-            try:
-                parts = path.split("/")
-                video_idx = parts.index("video") if "video" in parts else -1
-                if video_idx != -1 and video_idx + 1 < len(parts):
-                    video_id = parts[video_idx + 1]
-                    with urlopen(f"https://rutube.ru/api/video/{video_id}/", timeout=3) as response:
-                        data = json.loads(response.read().decode("utf-8"))
-                        return data.get("thumbnail_url") or data.get("preview_url") or ""
-            except Exception:
-                pass
+        if self.video_file:
+            return self.generate_thumbnail()
 
         return ""
 
+    def generate_thumbnail(self) -> str:
+        if not self.video_file or not self.video_file.path:
+            return ""
+
+        try:
+            video_path = self.video_file.path
+            thumb_dir = os.path.join(settings.MEDIA_ROOT, 'lesson_video_previews')
+            os.makedirs(thumb_dir, exist_ok=True)
+
+            thumb_filename = f"thumb_{self.pk}_{os.path.basename(video_path)}.jpg"
+            thumb_full_path = os.path.join(thumb_dir, thumb_filename)
+
+            result = subprocess.run([
+                'ffmpeg', '-ss', '00:00:01', '-i', video_path,
+                '-frames:v', '1', '-q:v', '2', '-y', thumb_full_path
+            ], capture_output=True, timeout=25)
+
+            if result.returncode == 0 and os.path.exists(thumb_full_path):
+                with open(thumb_full_path, 'rb') as f:
+                    self.video_preview.save(thumb_filename, ContentFile(f.read()), save=True)
+
+                try:
+                    os.unlink(thumb_full_path)
+                except:
+                    pass
+                return self.video_preview.url
+        except Exception as e:
+            print(f"Ошибка генерации превью для LessonContent {self.id}: {e}")
+
+        return ""
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.video_file and not self.video_preview:
+            self.generate_thumbnail()
+
+
+# ==================== Тесты ====================
 
 class TestQuestion(models.Model):
     SINGLE = "single"
@@ -256,6 +302,8 @@ class TestOption(models.Model):
     def __str__(self):
         return self.option_text
 
+
+# ==================== Игры ====================
 
 class GameScenario(models.Model):
     content = models.OneToOneField(

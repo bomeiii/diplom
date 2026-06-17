@@ -1,10 +1,12 @@
 {% extends "twa_base.html" %}
 {% load static %}
 {% block title %}{{ lesson.title }}{% endblock %}
+
 {% block extra_head %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
 <link rel="stylesheet" href="{% static 'css/lesson.css' %}">
 {% endblock %}
+
 {% block content %}
 <div class="card">
     <div class="lesson-header">
@@ -20,9 +22,11 @@
 
         {% if content.content_type == "article" %}
             <div class="article-body">{{ content.article_body|safe }}</div>
+
         {% elif content.content_type == "video" %}
             {% with preview=content.get_video_preview_url %}
-              {% if content.video_url %}
+              {% if content.video_url and not content.video_file %}
+                <!-- Внешнее видео -->
                 <a
                   data-fancybox="lesson-video-{{ content.id }}"
                   data-type="iframe"
@@ -31,37 +35,28 @@
                   class="video-thumb"
                 >
                   {% if preview %}
-                    <img src="{{ preview }}" alt="Превью видео">
+                    <img src="{{ preview }}" alt="Превью видео" loading="lazy">
                   {% else %}
                     <div class="video-fallback">Открыть видео</div>
                   {% endif %}
                   <span class="video-play">▶</span>
                 </a>
+
               {% elif content.video_file %}
-                <a
-                  data-fancybox="lesson-video-{{ content.id }}"
-                  data-type="inline"
-                  data-src="#video-inline-{{ content.id }}"
-                  href="javascript:;"
-                  class="video-thumb"
-                >
-                  {% if preview %}
-                    <img src="{{ preview }}" alt="Превью видео">
-                  {% else %}
-                    <div class="video-fallback">Открыть видеофайл</div>
-                  {% endif %}
-                  <span class="video-play">▶</span>
-                </a>
-                <div id="video-inline-{{ content.id }}" class="video-inline is-hidden">
-                  <video controls class="video-inline-player">
-                    <source src="{{ content.video_file.url }}">
+                <!-- Локальное видео — сразу плеер -->
+                <div class="video-player-wrapper">
+                  <video controls width="100%" preload="metadata" style="border-radius: 8px; background: #000; max-width: 100%;">
+                    <source src="{{ content.video_file.url }}" type="video/mp4">
+                    <source src="{{ content.video_file.url }}" type="video/webm">
                     Ваш браузер не поддерживает видео.
                   </video>
                 </div>
+
               {% else %}
                 <p class="muted">Видео не добавлено.</p>
               {% endif %}
             {% endwith %}
+
         {% elif content.content_type == "test" %}
             {% if request.GET.test_sent == '1' and request.GET.content_id == content.id|stringformat:"s" %}
             <div class="notice notice--success" id="test-sent-notice-{{ content.id }}">Тест отправлен</div>
@@ -98,6 +93,7 @@
                 {% endfor %}
                 <button class="btn" type="submit">Сохранить</button>
             </form>
+
         {% elif content.content_type == "game" %}
             {% if request.GET.game_sent == '1' and request.GET.content_id == content.id|stringformat:"s" %}
             <div class="notice notice--success">Ответ сохранён</div>
@@ -158,6 +154,7 @@
     </div>
 {% endfor %}
 {% endblock %}
+
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
 <script>
