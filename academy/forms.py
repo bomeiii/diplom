@@ -1,7 +1,7 @@
 from django import forms
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 
-from .models import Course, Lesson, LessonContent, Psychologist, TestOption, TestQuestion
+from .models import Course, Lesson, LessonContent, Psychologist, TestOption, TestQuestion, SocialLink
 
 
 class PsychologistProfileForm(forms.ModelForm):
@@ -19,6 +19,73 @@ class PsychologistProfileForm(forms.ModelForm):
             "bio": forms.Textarea(attrs={"rows": 5}),
             "photo": forms.FileInput(attrs={"accept": "image/*"}),
         }
+
+
+class SocialLinkForm(forms.ModelForm):
+    """Форма для добавления/редактирования социальных ссылок"""
+    
+    class Meta:
+        model = SocialLink
+        fields = ("platform", "url", "phone_number", "order", "is_active")
+        labels = {
+            "platform": "Платформа",
+            "url": "Ссылка",
+            "phone_number": "Номер телефона",
+            "order": "Порядок",
+            "is_active": "Активно",
+        }
+        help_texts = {
+            "url": "Введите полный URL, включая https://",
+            "phone_number": "Введите номер в формате +79001234567",
+            "order": "Чем меньше число, тем выше в списке",
+        }
+        widgets = {
+            "platform": forms.Select(attrs={"class": "form-control"}),
+            "url": forms.URLInput(attrs={
+                "class": "form-control",
+                "placeholder": "https://example.com",
+            }),
+            "phone_number": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "+79001234567",
+            }),
+            "order": forms.NumberInput(attrs={
+                "class": "form-control",
+                "min": 0,
+            }),
+            "is_active": forms.CheckboxInput(attrs={
+                "class": "form-check-input",
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Делаем поле url необязательным, т.к. для телефона используется phone_number
+        self.fields["url"].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        platform = cleaned_data.get("platform")
+        url = cleaned_data.get("url")
+        phone_number = cleaned_data.get("phone_number")
+        
+        # Валидация в зависимости от платформы
+        if platform == "phone":
+            if not phone_number:
+                self.add_error("phone_number", "Для платформы 'Телефон' укажите номер.")
+            elif phone_number:
+                # Очищаем номер от лишних символов
+                cleaned_number = "".join(c for c in phone_number if c.isdigit() or c == "+")
+                if not cleaned_number or len(cleaned_number) < 10:
+                    self.add_error("phone_number", "Введите корректный номер телефона (минимум 10 цифр).")
+                cleaned_data["phone_number"] = cleaned_number
+        else:
+            if not url:
+                self.add_error("url", f"Для платформы '{dict(SocialLink.PLATFORM_CHOICES).get(platform, platform)}' укажите ссылку.")
+            elif not url.startswith(("http://", "https://")):
+                self.add_error("url", "Ссылка должна начинаться с http:// или https://")
+        
+        return cleaned_data
 
 
 class CourseForm(forms.ModelForm):
@@ -126,4 +193,3 @@ class TestOptionForm(forms.ModelForm):
             "is_correct": "Правильный вариант",
             "score": "Баллы (дополнительно)",
         }
-

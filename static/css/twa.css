@@ -28,6 +28,16 @@ main {
   gap: var(--space-md);
   align-items: flex-start;
 }
+@media (max-width: 525px) {
+  .card--psychologist {
+    flex-direction: column !important;
+  }
+
+  .photo-card--profile {
+    max-width: 100% !important;
+    max-height: 100% !important;
+  }
+}
 
 .muted {
   color: var(--tg-theme-hint-color, var(--color-muted));
@@ -45,4 +55,14 @@ select {
 .twa-user-greeting {
   margin-top: 0;
   margin-bottom: var(--space-md);
+}
+
+.social-links__list {
+  display: flex;
+}
+
+.social-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
 }

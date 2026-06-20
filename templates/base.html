@@ -1,26 +1,36 @@
 {% load static %}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Onest:wght@500;600;700&display=swap" rel="stylesheet">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Onest:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <title>{% block title %}Платформа психологов{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}" />
     {% block extra_head %}{% endblock %}
-</head>
-<body>
+  </head>
+  <body>
+    <img src="{% static 'images/Group_15.png' %}" alt="Отражение" class="bg-image" style="position: fixed; left:0; top:-50px; width: 300px; height: 105vh; overflow: hidden;" />
+    <img src="{% static 'images/Group_15.png' %}" alt="Отражение" class="bg-image" style="position: fixed; right:0; top:-50px; width: 300px; height: 105vh; overflow: hidden; transform: scaleX(-1);" />
     <header>
-        <div class="header-bar">
-            <a class="logo" href="/"><strong>Отражение</strong></a>
-            <a class="btn" href="{% url 'academy:psych_login' %}">Кабинет психолога</a>
-        </div>
+      <div class="header-bar">
+        <a class="logo" href="/"><strong>Отражение</strong></a>
+        <a class="btn" href="{% url 'academy:psych_login' %}"
+          >Кабинет психолога</a
+        >
+      </div>
     </header>
     <main class="{% block main_class %}{% endblock %}">
-        {% block content %}{% endblock %}
+      {% block content %}{% endblock %}
     </main>
+      <footer>
+        <span>Разработано bomei</span>
+    </footer>
     {% block extra_scripts %}{% endblock %}
-</body>
+  </body>
 </html>

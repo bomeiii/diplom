@@ -1,4 +1,5 @@
 {% extends "twa_base.html" %}
+{% load static %} 
 {% block title %}Профиль психолога{% endblock %}
 {% block content %}
 <div class="card card--psychologist">
@@ -15,6 +16,43 @@
     <p class="muted">
       {{ psychologist.bio|default:"Информация о психологе пока не заполнена." }}
     </p>
+    <div class="social-links">
+      <span class="social-links__label">Связаться со мной:</span>
+      <div class="social-links__list">
+        {% for link in psychologist.social_links.all %}
+          {% if link.is_active %}
+            {% with link_url=link.get_url %}
+              {% if link_url %}
+                <a href="{{ link_url }}" 
+                   target="{% if link.platform != 'phone' %}_blank{% endif %}" 
+                   rel="noopener noreferrer" 
+                   class="social-link social-link--{{ link.platform }}" 
+                   title="{{ link.get_platform_display }}">
+                  
+                  <!-- Используем предзагруженные иконки из статики -->
+                  <img src="{% static 'images/social/'|add:link.platform|add:'.svg' %}" 
+                       alt="{{ link.get_platform_display }}" 
+                       class="social-icon"
+                       style="width: 30px; height: 30px; display: block; margin-right: 8px;"
+                       onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                  
+                  <!-- Fallback если иконка не найдена -->
+                  <span class="social-icon-fallback" style="display:none;">
+                    {{ link.get_platform_display|slice:":2" }}
+                  </span>
+                  
+                  {% if link.platform == 'phone' and link.phone_number %}
+                    <span class="social-link-label">{{ link.phone_number }}</span>
+                  {% endif %}
+                </a>
+              {% endif %}
+            {% endwith %}
+          {% endif %}
+        {% empty %}
+          <span class="muted">Нет доступных контактов</span>
+        {% endfor %}
+      </div>
+    </div>
   </div>
 </div>
 

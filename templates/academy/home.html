@@ -52,12 +52,14 @@
             {% if psychologist.photo %}
             <img src="{{ psychologist.photo.url }}" alt="Фото {{ psychologist.first_name }} {{ psychologist.last_name }}" class="photo-card photo-card--home">
             {% endif %}
-            <div class="tile-link__title">{{ psychologist.last_name }} {{ psychologist.first_name }}</div>
-            <div class="tile-link__meta">
-                <span class="badge">{{ psychologist.specialization }}</span>
+            <div class="tile-link__content">
+                <div class="tile-link__title">{{ psychologist.last_name }} {{ psychologist.first_name }}</div>
+                <div class="tile-link__meta">
+                    <span class="badge">{{ psychologist.specialization }}</span>
+                </div>
+                <p class="muted tile-link__description">{{ psychologist.bio|default:"Описание пока не заполнено." }}</p>
+                <span class="btn">Открыть профиль</span>
             </div>
-            <p class="muted">{{ psychologist.bio|default:"Описание пока не заполнено." }}</p>
-            <span class="btn">Открыть профиль</span>
         </a>
         {% empty %}
         <p class="muted">Психологи пока не добавлены.</p>

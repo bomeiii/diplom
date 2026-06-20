@@ -1,6 +1,7 @@
 from django.db.models import Avg
 import json
 from django.conf import settings
+from django.contrib import messages
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.http import Http404
@@ -12,7 +13,7 @@ from django.urls import reverse
 from urllib.parse import urlencode
 
 from .child_utils import resolve_child_profile
-from .forms import CourseForm, LessonContentForm, LessonForm, PsychologistProfileForm, TestOptionForm, TestQuestionForm
+from .forms import CourseForm, LessonContentForm, LessonForm, PsychologistProfileForm, TestOptionForm, TestQuestionForm, SocialLinkForm
 from .telegram_auth import extract_init_data, parse_telegram_user, validate_init_data
 from .models import (
     AvatarPartAsset,
@@ -31,6 +32,7 @@ from .models import (
     SavedAvatar,
     TestQuestion,
     TestOption,
+    SocialLink,
 )
 
 
@@ -377,16 +379,28 @@ def psych_profile(request: HttpRequest) -> HttpResponse:
 
     old_photo_name = psychologist.photo.name if psychologist.photo else ""
     form = PsychologistProfileForm(request.POST or None, request.FILES or None, instance=psychologist)
+    
+    # Получаем социальные ссылки
+    social_links = psychologist.social_links.all()
+    social_form = SocialLinkForm()
+    
     if request.method == "POST" and form.is_valid():
         updated = form.save()
         if old_photo_name and updated.photo and updated.photo.name != old_photo_name:
             updated.photo.storage.delete(old_photo_name)
+        # Добавляем сообщение об успехе
+        messages.success(request, 'Профиль успешно обновлен!')
         return redirect("academy:psych_profile")
 
     return render(
         request,
         "psych/profile_form.html",
-        {"psychologist": psychologist, "form": form},
+        {
+            "psychologist": psychologist, 
+            "form": form,
+            "social_links": social_links,  # <-- ВАЖНО: передаем в шаблон
+            "social_form": social_form,    # <-- ВАЖНО: передаем в шаблон
+        },
     )
 
 
@@ -1170,6 +1184,44 @@ def psych_contents_reorder(request: HttpRequest, lesson_id: int) -> HttpResponse
         position += 1
     return redirect("academy:psych_lesson_edit", lesson_id=lesson.id)
 
+@login_required
+@require_http_methods(["POST"])
+def add_social_link(request: HttpRequest) -> HttpResponse:
+    """Добавление социальной ссылки"""
+    try:
+        psychologist = _get_current_psychologist(request)
+    except Psychologist.DoesNotExist:
+        logout(request)
+        return redirect("academy:psych_login")
+    
+    form = SocialLinkForm(request.POST)
+    if form.is_valid():
+        social_link = form.save(commit=False)
+        social_link.psychologist = psychologist
+        social_link.save()
+        messages.success(request, 'Социальная ссылка успешно добавлена!')
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(request, f'{field}: {error}')
+    
+    return redirect("academy:psych_profile")
+
+
+@login_required
+@require_http_methods(["POST"])
+def delete_social_link(request: HttpRequest, link_id: int) -> HttpResponse:
+    """Удаление социальной ссылки"""
+    try:
+        psychologist = _get_current_psychologist(request)
+    except Psychologist.DoesNotExist:
+        logout(request)
+        return redirect("academy:psych_login")
+    
+    link = get_object_or_404(SocialLink, id=link_id, psychologist=psychologist)
+    link.delete()
+    messages.success(request, 'Социальная ссылка удалена!')
+    return redirect("academy:psych_profile")
 
 def build_fake_ai_summary(course: Course, lesson: Lesson, total_score: int, open_answers: list[dict]) -> str:
     if total_score <= 3:

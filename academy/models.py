@@ -54,7 +54,100 @@ class Psychologist(models.Model):
 
     def __str__(self):
         return f"{self.last_name} {self.first_name}"
+    def get_social_links_list(self):
+     
+        return self.social_links.all()
 
+
+class SocialLink(models.Model):
+    """
+    Модель для социальных ссылок психолога
+    """
+    PLATFORM_CHOICES = [
+        ('max', 'MAX'),
+        ('vk', 'ВКонтакте'),
+        ('phone', 'Телефон'),
+    ]
+
+    psychologist = models.ForeignKey(
+        'Psychologist',
+        on_delete=models.CASCADE,
+        related_name='social_links',
+        verbose_name="Психолог"
+    )
+    platform = models.CharField(
+        max_length=50,
+        choices=PLATFORM_CHOICES,
+        verbose_name="Платформа"
+    )
+    url = models.URLField(
+        max_length=500,
+        verbose_name="Ссылка",
+        help_text="Введите полный URL, включая https:// (для телефона используйте tel:+79001234567)",
+        blank=True,
+        null=True,
+    )
+    phone_number = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name="Номер телефона",
+        help_text="Введите номер телефона в формате +79001234567"
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Порядок",
+        help_text="Чем меньше число, тем выше в списке"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Активно",
+        help_text="Отображать эту ссылку на сайте"
+    )
+    icon = models.ImageField(
+        upload_to='social_icons/',
+        blank=True,
+        null=True,
+        verbose_name="Иконка",
+        help_text="Загрузите свою иконку для этой платформы (опционально)"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'platform']
+        verbose_name = "Социальная ссылка"
+        verbose_name_plural = "Социальные ссылки"
+        unique_together = ['psychologist', 'platform']
+
+    def __str__(self):
+        return f"{self.get_platform_display()} - {self.psychologist}"
+
+    def get_url(self):
+        """Возвращает правильный URL для платформы"""
+        if self.platform == 'phone':
+            if self.phone_number:
+                # Убираем все лишние символы из номера
+                clean_number = ''.join(filter(str.isdigit, self.phone_number))
+                if clean_number:
+                    return f"tel:{clean_number}"
+            return None
+        return self.url
+
+    def get_icon_url(self):
+        """Возвращает URL иконки или дефолтную"""
+        if self.icon:
+            return self.icon.url
+        return None
+
+    def get_platform_color(self):
+        """Возвращает цвет платформы для стилизации"""
+        colors = {
+            'max': '#0088cc',
+            'vk': '#4a76a8',
+            'phone': '#34b7f1',
+        }
+        return colors.get(self.platform, '#6c757d')
 
 class ChildProfile(models.Model):
     telegram_user_id = models.BigIntegerField(null=True, blank=True, unique=True, db_index=True)

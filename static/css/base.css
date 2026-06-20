@@ -26,6 +26,10 @@
   --page-width: 1120px;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 /* --- Base layout --- */
 body {
   font-family: var(--font-body);
@@ -35,6 +39,10 @@ body {
   line-height: 1.6;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
 }
 
 h1,
@@ -47,16 +55,38 @@ h3 {
 }
 
 header {
+  position: relative;
+  z-index: 2;
   background: var(--color-brown);
   color: var(--color-cream);
   padding: var(--space-md) var(--page-gutter);
   border-bottom: 1px solid rgba(241, 232, 199, 0.12);
 }
 
+footer {
+  background: var(--color-brown);
+  color: var(--color-cream);
+  padding: var(--space-md) var(--page-gutter);
+  border-top: 1px solid rgba(241, 232, 199, 0.12);
+  margin-top: auto;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+
+@media (max-width: 1765px) {
+  .bg-image {
+    display: none;
+  }
+}
+
 main {
   padding: var(--space-lg);
   max-width: 1120px;
+  width: 100%;
   margin: 0 auto;
+  flex: 1;
 }
 
 main.main--flush {
@@ -537,8 +567,14 @@ input[type="checkbox" i] {
 }
 
 .photo-card--home {
-  max-height: 180px;
-  margin-bottom: var(--space-sm);
+  max-height: 100%;
+  max-width: 200px;
+}
+
+@media (max-width: 525px) {
+  .photo-card--home {
+    max-width: 100%;
+  }
 }
 
 .photo-card--profile {
@@ -584,6 +620,17 @@ input[type="checkbox" i] {
   align-items: flex-start;
 }
 
+@media (max-width: 525px) {
+  .card--psychologist {
+    flex-direction: column !important;
+  }
+
+  .photo-card--profile {
+    max-width: 100% !important;
+    max-height: 100% !important;
+  }
+}
+
 .card--psychologist-profile {
   flex: 1;
 }
@@ -591,8 +638,20 @@ input[type="checkbox" i] {
 .tile-link--psychologist {
   height: 100%;
   display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
+  gap: var(--space-md);
+  overflow: hidden;
+}
+
+@media (max-width: 525px) {
+  .tile-link--psychologist {
+    flex-direction: column;
+  }
+}
+
+.tile-link__description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
   overflow: hidden;
 }
 
@@ -635,5 +694,15 @@ input[type="checkbox" i] {
 .psychologist-grid {
   display: grid;
   gap: var(--space-md);
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: 1fr;
+}
+
+.social-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.social-links__list {
+  display: flex;
 }
