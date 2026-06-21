@@ -8,10 +8,12 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <meta name="theme-color" content="#8d9758" />
+    
     <title>{% block title %}Платформа психологов{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'telegram/miniapp.css' %}" />
     <link rel="stylesheet" href="{% static 'css/base.css' %}" />
     <link rel="stylesheet" href="{% static 'css/twa.css' %}" />
+    <link rel="icon" href="{% static 'images/user.svg' %}" " type="image/svg+xml" />
     {% block extra_head %}{% endblock %}
   </head>
   <body data-telegram-init-url="{% url 'academy:telegram_init' %}">
