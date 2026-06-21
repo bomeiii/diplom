@@ -41,9 +41,6 @@
                     {{ link.get_platform_display|slice:":2" }}
                   </span>
                   
-                  {% if link.platform == 'phone' and link.phone_number %}
-                    <span class="social-link-label">{{ link.phone_number }}</span>
-                  {% endif %}
                 </a>
               {% endif %}
             {% endwith %}

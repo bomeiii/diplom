@@ -711,4 +711,6 @@ input[type="checkbox" i] {
 
 .social-links__list {
   display: flex;
+  align-items: center;
+  gap: var(--space-sm);
 }
